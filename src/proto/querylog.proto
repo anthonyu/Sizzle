@@ -1,0 +1,6 @@
+package sizzle.types;
+
+message QueryLogProto {
+	required string ip = 1;
+	required int64 time_usec = 2;
+}

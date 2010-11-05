@@ -1,0 +1,5 @@
+package sizzle.types;
+
+message P4ChangelistStats {
+	required int64 time = 1;
+}

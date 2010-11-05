@@ -1,0 +1,6 @@
+package sizzle.types;
+
+message Document {
+	required string url = 1;
+	required int64 pagerank = 2;
+}

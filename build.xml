@@ -1,0 +1,110 @@
+<?xml version="1.0" ?>
+<project name="sizzle" default="package">
+	<property name="src.proto" location="src/proto"/>
+
+	<path id="classpath">
+		<pathelement location="build/classes" />
+		<pathelement location="build/testclasses" />
+		<fileset dir="lib" includes="*.jar" />
+	</path>
+
+	<target name="init">
+		<mkdir dir="build/java/sizzle/parser" />
+		<mkdir dir="build/javacc" />
+		<mkdir dir="build/classes" />
+		<mkdir dir="build/testclasses" />
+		<mkdir dir="dist" />
+	</target>
+
+	<target name="translate-proto" depends="init">
+		<apply executable="protoc" parallel="true">
+			<arg value="--proto_path=${src.proto}" />
+			<arg value="--java_out=build/java" />
+			<srcfile />
+			<fileset dir="${src.proto}" includes="*.proto" />
+		</apply>
+	</target>
+
+	<target name="tree" depends="init">
+		<java jar="lib/jtb132.jar" fork="true" dir="build/java/sizzle/parser">
+			<arg value="-o" />
+			<arg value="../../../javacc/sizzle.jj" />
+			<arg value="-p" />
+			<arg value="sizzle.parser" />
+			<arg value="../../../../src/jtb/sizzle.jtb" />
+		</java>
+	</target>
+
+	<target name="parser" depends="tree">
+		<javacc target="build/javacc/sizzle.jj" outputdirectory="build/java/sizzle/parser" javacchome="lib" static="true" />
+	</target>
+
+	<target name="compile-generated" depends="translate-proto,parser">
+		<javac includeantruntime="true" srcdir="build/java" destdir="build/classes" debug="on" debuglevel="lines,vars,source">
+			<classpath refid="classpath" />
+		</javac>
+	</target>
+
+	<target name="compile" depends="compile-generated">
+		<javac includeantruntime="true" srcdir="src/java" destdir="build/classes" debug="on" debuglevel="lines,vars,source">
+			<classpath refid="classpath" />
+		</javac>
+	</target>
+
+	<target name="compile-tests" depends="compile">
+		<javac includeantruntime="true" srcdir="src/test" destdir="build/testclasses" debug="on" debuglevel="lines,vars,source">
+			<classpath refid="classpath" />
+		</javac>
+	</target>
+
+	<target name="test" depends="compile-tests">
+		<junit fork="yes" haltonfailure="yes">
+			<classpath refid="classpath" />
+			<batchtest>
+				<formatter type="plain" usefile="false" />
+				<fileset dir="build/testclasses" includes="**/Test*.class" />
+			</batchtest>
+		</junit>
+		<delete file="SecurityAuth.audit" />
+	</target>
+
+	<target name="doc" depends="init">
+		<javadoc destdir="build/classes" sourcepath="src/java" packagenames="sizzle.*">
+			<classpath refid="classpath" />
+		</javadoc>
+	</target>
+
+	<target name="package" depends="test,doc">
+		<jar destfile="dist/sizzle-runtime.jar">
+			<fileset dir="build/classes">
+				<patternset>
+					<include name="sizzle/" />
+					<exclude name="**/parser/" />
+					<exclude name="**/compiler/" />
+					<exclude name="**/types/" />
+				</patternset>
+			</fileset>
+		</jar>
+		<jar destfile="dist/sizzle-compiler.jar">
+			<manifest>
+				<attribute name="Main-Class" value="sizzle.compiler.SizzleCompiler" />
+			</manifest>
+			<fileset dir="build/classes">
+				<patternset>
+					<exclude name="**/io/" />
+					<exclude name="**/runtime/" />
+				</patternset>
+			</fileset>
+			<fileset dir="conf" />
+			<zipfileset excludes="META-INF/" src="lib/log4j-1.2.15.jar" />
+			<zipfileset excludes="META-INF/" src="lib/commons-cli-1.2.jar" />
+			<zipfileset excludes="META-INF/" src="lib/scannotation-1.0.2.jar" />
+			<zipfileset excludes="META-INF/" src="lib/javassist-3.8.0.GA.jar" />
+		</jar>
+	</target>
+
+	<target name="clean" depends="init">
+		<delete dir="build" />
+		<delete dir="dist" />
+	</target>
+</project>
