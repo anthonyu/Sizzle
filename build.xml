@@ -19,7 +19,7 @@
 	<target name="translate-proto" depends="init">
 		<apply executable="protoc" parallel="true">
 			<arg value="--proto_path=${src.proto}" />
-			<arg value="--java_out=build/java" />
+			<arg value="--java_out=src/protobufs" />
 			<srcfile />
 			<fileset dir="${src.proto}" includes="*.proto" />
 		</apply>
@@ -39,8 +39,11 @@
 		<javacc target="build/javacc/sizzle.jj" outputdirectory="build/java/sizzle/parser" javacchome="lib" static="true" />
 	</target>
 
-	<target name="compile-generated" depends="translate-proto,parser">
+	<target name="compile-generated" depends="parser">
 		<javac includeantruntime="true" srcdir="build/java" destdir="build/classes" debug="on" debuglevel="lines,vars,source">
+			<classpath refid="classpath" />
+		</javac>
+		<javac includeantruntime="true" srcdir="src/protobufs" destdir="build/classes" debug="on" debuglevel="lines,vars,source">
 			<classpath refid="classpath" />
 		</javac>
 	</target>
