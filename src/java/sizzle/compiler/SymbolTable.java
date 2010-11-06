@@ -243,8 +243,16 @@ public class SymbolTable {
 			this.setFunction(s, new SizzleFunction("java.lang.Math." + s, new SizzleFloat(), new SizzleScalar[] { new SizzleFloat(), new SizzleFloat() }));
 
 		for (final String s : Arrays.asList("max", "min"))
-			for (final SizzleScalar t : Arrays.asList(new SizzleInt(), new SizzleTime(), new SizzleFloat()))
+			for (final SizzleScalar t : Arrays.asList(new SizzleInt(), new SizzleFloat()))
 				this.setFunction(s, new SizzleFunction("java.lang.Math." + s, new SizzleFloat(), new SizzleScalar[] { t, t }));
+
+		this.setFunction("max", new SizzleFunction(new SizzleFloat(), new SizzleScalar[] { new SizzleTime(), new SizzleTime() }, "(${0} > ${1} ? ${0} : ${1})"));
+		this.setFunction("min", new SizzleFunction(new SizzleFloat(), new SizzleScalar[] { new SizzleTime(), new SizzleTime() }, "(${0} < ${1} ? ${0} : ${1})"));
+
+		this.setFunction("max", new SizzleFunction(new SizzleFloat(), new SizzleScalar[] { new SizzleString(), new SizzleString() },
+				"(${0}.compareTo(${1}) > 0 ? ${0} : ${1})"));
+		this.setFunction("min", new SizzleFunction(new SizzleFloat(), new SizzleScalar[] { new SizzleString(), new SizzleString() },
+				"(${0}.compareTo(${1}) < 0 ? ${0} : ${1})"));
 
 		// expose whatever is left, assuming we are not aiming for strict
 		// compatibility
