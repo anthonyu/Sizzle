@@ -19,7 +19,7 @@
 	<target name="translate-proto" depends="init">
 		<apply executable="protoc" parallel="true">
 			<arg value="--proto_path=${src.proto}" />
-			<arg value="--java_out=src/protobufs" />
+			<arg value="--java_out=src/compiled-proto" />
 			<srcfile />
 			<fileset dir="${src.proto}" includes="*.proto" />
 		</apply>
@@ -43,7 +43,7 @@
 		<javac includeantruntime="true" srcdir="build/java" destdir="build/classes" debug="on" debuglevel="lines,vars,source">
 			<classpath refid="classpath" />
 		</javac>
-		<javac includeantruntime="true" srcdir="src/protobufs" destdir="build/classes" debug="on" debuglevel="lines,vars,source">
+		<javac includeantruntime="true" srcdir="src/compiled-proto" destdir="build/classes" debug="on" debuglevel="lines,vars,source">
 			<classpath refid="classpath" />
 		</javac>
 	</target>
