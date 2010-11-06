@@ -13,6 +13,7 @@ public class SizzleFunction extends SizzleType {
 	private String canonicalName;
 	private SizzleType type;
 	private SizzleType[] formalParameters;
+	private String macro;
 
 	/**
 	 * Construct a SizzleFunction.
@@ -66,6 +67,26 @@ public class SizzleFunction extends SizzleType {
 		this(null, type, formalParameters);
 	}
 
+	/**
+	 * Construct a SizzleFunction.
+	 * 
+	 * @param type
+	 *            A {@link SizzleType} representing the return type
+	 * 
+	 * @param formalParameters
+	 *            An array of {@link SizzleType} containing the type of each
+	 *            formal parameter
+	 * 
+	 * @param macro
+	 *            A snippet of Java code that can be used as a macro
+	 * 
+	 */
+	public SizzleFunction(final SizzleType type, final SizzleType[] formalParameters, final String macro) {
+		this(null, type, formalParameters);
+
+		this.macro = macro;
+	}
+
 	/** {@inheritDoc} */
 	@Override
 	public boolean assigns(final SizzleType that) {
@@ -105,6 +126,16 @@ public class SizzleFunction extends SizzleType {
 	 */
 	public int countParameters() {
 		return this.formalParameters.length;
+	}
+
+	/**
+	 * Returns whether this function has a macro.
+	 * 
+	 * @return True iff this function has a macro
+	 * 
+	 */
+	public boolean hasMacro() {
+		return this.macro != null;
 	}
 
 	/**
@@ -172,8 +203,16 @@ public class SizzleFunction extends SizzleType {
 	 *            formal arguments of this function
 	 * 
 	 */
-	public void setFormalArgs(final SizzleType[] formalArgs) {
-		this.formalParameters = formalArgs;
+	public void setFormalParameters(final SizzleType[] formalParameters) {
+		this.formalParameters = formalParameters;
+	}
+
+	public String getMacro() {
+		return this.macro;
+	}
+
+	public void setMacro(final String macro) {
+		this.macro = macro;
 	}
 
 	/** {@inheritDoc} */

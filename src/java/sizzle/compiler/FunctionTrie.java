@@ -28,9 +28,9 @@ public class FunctionTrie {
 			}
 		} else {
 			for (final Object o : this.trie.keySet())
-				if (o instanceof SizzleVarargs && ((SizzleVarargs) o).assigns((SizzleType) ids[0])) {
+				if (o instanceof SizzleVarargs && ((SizzleVarargs) o).accepts((SizzleType) ids[0])) {
 					return ((FunctionTrie) this.trie.get(o)).getFunction();
-				} else if (o instanceof SizzleType && ((SizzleType) o).assigns((SizzleType) ids[0])) {
+				} else if (o instanceof SizzleType && ((SizzleType) o).accepts((SizzleType) ids[0])) {
 					final SizzleFunction function = ((FunctionTrie) this.trie.get(o)).getFunction(Arrays.copyOfRange(ids, 1, ids.length));
 
 					if (function != null)
@@ -77,7 +77,7 @@ public class FunctionTrie {
 	private void addFunction(final Object[] ids, final SizzleFunction sizzleFunction) {
 		if (this.trie.containsKey(ids[0])) {
 			if (ids[0].equals("")) {
-				throw new RuntimeException("function already defined");
+				throw new RuntimeException("function " + sizzleFunction + " already defined");
 			} else {
 				((FunctionTrie) this.trie.get(ids[0])).addFunction(Arrays.copyOfRange(ids, 1, ids.length), sizzleFunction);
 			}

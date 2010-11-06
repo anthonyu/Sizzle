@@ -23,14 +23,18 @@ public class SizzleVarargs extends SizzleType {
 	/** {@inheritDoc} */
 	@Override
 	public boolean assigns(final SizzleType that) {
+		// varargs can only accept, not be assigned to
+		return false;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
 		// if that is a function, check its return type
 		if (that instanceof SizzleFunction)
 			return this.assigns(((SizzleFunction) that).getType());
 
-		if (this.type.equals(that))
-			return true;
-
-		if (this.type.equals(new SizzleAny()))
+		if (this.type.accepts(that))
 			return true;
 
 		return false;

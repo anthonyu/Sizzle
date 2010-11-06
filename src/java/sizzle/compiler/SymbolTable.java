@@ -126,16 +126,20 @@ public class SymbolTable {
 		this.functions = new FunctionTrie();
 
 		// these generic functions require more finagling than can currently be
-		// (easily) done with a static method, so they are handled in the code
-		// generator
-		this.setFunction("def", new SizzleFunction(new SizzleBool(), new SizzleType[] { new SizzleAny() }));
-		this.setFunction("len", new SizzleFunction(new SizzleInt(), new SizzleType[] { new SizzleArray(new SizzleScalar()) }));
+		// (easily) done with a static method, so they are handled with macros
+
+		this.setFunction("def", new SizzleFunction(new SizzleBool(), new SizzleType[] { new SizzleAny() }, "${0} != null"));
+		this.setFunction("len", new SizzleFunction(new SizzleInt(), new SizzleType[] { new SizzleArray(new SizzleScalar()) }, "${0}.length"));
+		this.setFunction("len", new SizzleFunction(new SizzleInt(), new SizzleType[] { new SizzleString() }, "${0}.length()"));
+		this.setFunction("len", new SizzleFunction(new SizzleInt(), new SizzleType[] { new SizzleBytes() }, "${0}.length"));
+		this.setFunction("len", new SizzleFunction(new SizzleInt(), new SizzleType[] { new SizzleMap(new SizzleScalar(), new SizzleScalar()) },
+				"${0}.keySet().size()"));
 		this.setFunction("haskey", new SizzleFunction(new SizzleBool(), new SizzleType[] { new SizzleMap(new SizzleScalar(), new SizzleScalar()),
-				new SizzleScalar() }));
+				new SizzleScalar() }, "${0}.containsKey(${1})"));
 		this.setFunction("keys", new SizzleFunction(new SizzleArray(new SizzleScalar()), new SizzleType[] { new SizzleMap(new SizzleScalar(),
-				new SizzleScalar()) }));
+				new SizzleScalar()) }, "${0}.keySet().toArray()"));
 		this.setFunction("lookup", new SizzleFunction(new SizzleScalar(), new SizzleType[] { new SizzleMap(new SizzleScalar(), new SizzleScalar()),
-				new SizzleScalar(), new SizzleScalar() }));
+				new SizzleScalar(), new SizzleScalar() }, "(${0}.containsKey(${1}) ? ${0}.get(${1}) : ${2})"));
 
 		// these fingerprints are identity functions
 		this.setFunction("fingerprintof", new SizzleFunction("", new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }));
@@ -150,7 +154,7 @@ public class SymbolTable {
 		// bool to int
 		this.setFunction("int", new SizzleFunction("sizzle.functions.SizzleCasts.booleanToLong", new SizzleInt(), new SizzleScalar[] { new SizzleBool() }));
 		// float to int
-		this.setFunction("int", new SizzleFunction("(long)", new SizzleInt(), new SizzleScalar[] { new SizzleFloat() }));
+		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleFloat() }, "(long)${0}"));
 		// time to int
 		this.setFunction("int", new SizzleFunction("", new SizzleInt(), new SizzleScalar[] { new SizzleTime() }));
 		// fingerprint to int

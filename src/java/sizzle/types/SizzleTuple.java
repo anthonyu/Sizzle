@@ -45,6 +45,12 @@ public class SizzleTuple extends SizzleType {
 		return ((SizzleTuple) that).name.equals(this.name);
 	}
 
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
+		return this.assigns(that);
+	}
+
 	/**
 	 * Return the type of the member identified by a given name.
 	 * 

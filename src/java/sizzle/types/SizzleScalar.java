@@ -14,16 +14,27 @@ public class SizzleScalar extends SizzleType {
 		if (that instanceof SizzleFunction)
 			return this.assigns(((SizzleFunction) that).getType());
 
-		// otherwise, if that is an array, check the value type
-		if (that instanceof SizzleArray)
-			return this.assigns(((SizzleArray) that).getType());
-
 		// otherwise, if it's not a scalar, forget it
 		if (!(that instanceof SizzleScalar))
 			return false;
 
 		// check that the classes match
 		return this.getClass().equals(that.getClass());
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
+		// if that is a function, check the return type
+		if (that instanceof SizzleFunction)
+			return this.assigns(((SizzleFunction) that).getType());
+
+		// otherwise, if it's not a scalar, forget it
+		if (!(that instanceof SizzleScalar))
+			return false;
+
+		// check that the classes match
+		return true;
 	}
 
 	/** {@inheritDoc} */

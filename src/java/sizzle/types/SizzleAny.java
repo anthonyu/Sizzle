@@ -16,6 +16,13 @@ public class SizzleAny extends SizzleType {
 
 	/** {@inheritDoc} */
 	@Override
+	public boolean accepts(final SizzleType that) {
+		// anything can be be used as an 'any' param
+		return true;
+	}
+
+	/** {@inheritDoc} */
+	@Override
 	public String toString() {
 		return "any";
 	}

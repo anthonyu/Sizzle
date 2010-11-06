@@ -9,7 +9,7 @@ package sizzle.types;
 public class SizzleFloat extends SizzleScalar {
 	/** {@inheritDoc} */
 	@Override
-	public SizzleScalar arithmetics(SizzleType that) {
+	public SizzleScalar arithmetics(final SizzleType that) {
 		// if that is a function, check its return type
 		if (that instanceof SizzleFunction)
 			return this.arithmetics(((SizzleFunction) that).getType());
@@ -27,13 +27,19 @@ public class SizzleFloat extends SizzleScalar {
 
 	/** {@inheritDoc} */
 	@Override
-	public boolean assigns(SizzleType that) {
+	public boolean assigns(final SizzleType that) {
 		// ints can be assigned to floats
 		if (that instanceof SizzleInt)
 			return true;
 
 		// otherwise, just check the defaults
 		return super.assigns(that);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
+		return this.assigns(that);
 	}
 
 	/** {@inheritDoc} */

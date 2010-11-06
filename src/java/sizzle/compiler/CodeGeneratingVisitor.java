@@ -136,9 +136,8 @@ public class CodeGeneratingVisitor extends GJDepthFirst<String, SymbolTable> {
 	private StaticDeclarationCodeGeneratingVisitor staticfinder;
 	private String staticDeclarations;
 
-	private final HashMap<String, AggregatorDescription> aggregators;
-
-	private Map<String, String> codeMap;
+	private final Map<String, AggregatorDescription> aggregators;
+	private final Map<String, String> codeMap;
 
 	public CodeGeneratingVisitor() {
 		this.namefinder = new NameFindingVisitor();
@@ -146,6 +145,21 @@ public class CodeGeneratingVisitor extends GJDepthFirst<String, SymbolTable> {
 		this.indexeefinder = new IndexeeFindingVisitor(this.namefinder);
 
 		this.aggregators = new HashMap<String, AggregatorDescription>();
+
+		this.codeMap = new HashMap<String, String>();
+		this.codeMap.put("true", "true");
+		this.codeMap.put("false", "false");
+		this.codeMap.put("PI", "Math.PI");
+		this.codeMap.put("Inf", "Double.POSITIVE_INFINITY");
+		this.codeMap.put("inf", "Double.POSITIVE_INFINITY");
+		this.codeMap.put("NaN", "Double.NaN");
+		this.codeMap.put("nan", "Double.NaN");
+		this.codeMap.put("SECOND", "1000 * 1000");
+		this.codeMap.put("SEC", "1000 * 1000");
+		this.codeMap.put("MINUTE", "(60 * 1000 * 1000)");
+		this.codeMap.put("MIN", "(60 * 1000 * 1000)");
+		this.codeMap.put("HOUR", "(60 * 60 * 1000 * 1000)");
+		this.codeMap.put("HR", "(60 * 60 * 1000 * 1000)");
 	}
 
 	public CodeGeneratingVisitor(final String name) {
@@ -154,6 +168,15 @@ public class CodeGeneratingVisitor extends GJDepthFirst<String, SymbolTable> {
 		this.staticfinder = new StaticDeclarationCodeGeneratingVisitor(this.namefinder);
 
 		this.name = name;
+	}
+
+	public static String expand(final String template, final String[] parameters) {
+		String replaced = template;
+
+		for (int i = 0; i < parameters.length; i++)
+			replaced = replaced.replace("${" + i + "}", parameters[i]);
+
+		return replaced;
 	}
 
 	// TODO: really support implicit cast on assignment?
@@ -231,34 +254,15 @@ public class CodeGeneratingVisitor extends GJDepthFirst<String, SymbolTable> {
 	public String visit(final CallExpression n, final SymbolTable argu) {
 		final String id = n.f0.f0.tokenImage;
 
-		// these map functions require more finagling than can be done with a
-		// static method
-		if (id.equals("def")) {
-			final String[] params = ((ExpressionList) n.f2.node).accept(this, argu).split(",");
-			return "(" + params[0] + " != null)";
-		} else if (id.equals("len")) {
-			// try to handle array length
-			final List<SizzleType> params = this.typefinder.check((ExpressionList) n.f2.node, argu);
-			if (params.get(0) instanceof SizzleArray) {
-				return ((ExpressionList) n.f2.node).accept(this, argu) + ".length";
-			} else {
-				// must be some other len()
-				final SizzleFunction function = argu.getFunction(id, this.typefinder.check((ExpressionList) n.f2.node, argu));
-
-				return function.getCanonicalName() + "(" + ((ExpressionList) n.f2.node).accept(this, argu) + ")";
-			}
-		} else if (id.equals("haskey")) {
-			final String[] params = ((ExpressionList) n.f2.node).accept(this, argu).split(",");
-			return params[0] + ".containsKey(" + params[1] + ")";
-		} else if (id.equals("keys")) {
-			final String[] params = ((ExpressionList) n.f2.node).accept(this, argu).split(",");
-			return params[0] + ".keySet().toArray()";
-		} else if (id.equals("lookup")) {
-			final String[] params = ((ExpressionList) n.f2.node).accept(this, argu).split(",");
-			return "(" + params[0] + ".containsKey(" + params[1] + ") ? " + params[0] + ".get(" + params[1] + ") : " + params[2] + ")";
-		} else if (n.f2.present()) {
+		if (n.f2.present()) {
 			final SizzleFunction function = argu.getFunction(id, this.typefinder.check((ExpressionList) n.f2.node, argu));
-			return function.getCanonicalName() + "(" + ((ExpressionList) n.f2.node).accept(this, argu) + ")";
+
+			final String parameters = ((ExpressionList) n.f2.node).accept(this, argu);
+
+			if (function.hasMacro())
+				return CodeGeneratingVisitor.expand(function.getMacro(), parameters.split(","));
+			else
+				return function.getCanonicalName() + "(" + parameters + ")";
 		} else {
 			final SizzleFunction function = argu.getFunction(id);
 			return function.getCanonicalName() + "()";
@@ -539,20 +543,6 @@ public class CodeGeneratingVisitor extends GJDepthFirst<String, SymbolTable> {
 	/** {@inheritDoc} */
 	@Override
 	public String visit(final Program n, final SymbolTable argu) {
-		this.codeMap = new HashMap<String, String>();
-		this.codeMap.put("true", "true");
-		this.codeMap.put("false", "false");
-		this.codeMap.put("PI", "Math.PI");
-		this.codeMap.put("Inf", "Double.POSITIVE_INFINITY");
-		this.codeMap.put("inf", "Double.POSITIVE_INFINITY");
-		this.codeMap.put("NaN", "Double.NaN");
-		this.codeMap.put("nan", "Double.NaN");
-		this.codeMap.put("SECOND", "1000");
-		this.codeMap.put("SEC", "1000");
-		this.codeMap.put("MINUTE", "(60 * 1000)");
-		this.codeMap.put("MIN", "(60 * 1000)");
-		this.codeMap.put("HOUR", "(60 * 60 * 1000)");
-		this.codeMap.put("HR", "(60 * 60 * 1000)");
 		if (argu.get("input").equals(new SizzleString()))
 			this.codeMap.put("input", "value.toString()");
 		else if (argu.get("input").equals(new SizzleBytes()))

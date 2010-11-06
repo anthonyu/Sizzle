@@ -1,6 +1,5 @@
 package sizzle.types;
 
-
 /**
  * A {@link SizzleScalar} representing a 64 bit integer value.
  * 
@@ -10,7 +9,7 @@ package sizzle.types;
 public class SizzleInt extends SizzleScalar {
 	/** {@inheritDoc} */
 	@Override
-	public SizzleScalar arithmetics(SizzleType that) {
+	public SizzleScalar arithmetics(final SizzleType that) {
 		// if that is a function, check its return value
 		if (that instanceof SizzleFunction)
 			return this.arithmetics(((SizzleFunction) that).getType());
@@ -27,7 +26,13 @@ public class SizzleInt extends SizzleScalar {
 		// otherwise, check the default
 		return super.arithmetics(that);
 	}
-	
+
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
+		return this.assigns(that);
+	}
+
 	/** {@inheritDoc} */
 	@Override
 	public String toString() {

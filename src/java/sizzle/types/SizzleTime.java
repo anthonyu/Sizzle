@@ -4,12 +4,12 @@ package sizzle.types;
  * A {@link SizzleScalar} representing a time value in milliseconds since 1970.
  * 
  * @author anthonyu
- *
+ * 
  */
 public class SizzleTime extends SizzleScalar {
 	/** {@inheritDoc} */
 	@Override
-	public SizzleScalar arithmetics(SizzleType that) {
+	public SizzleScalar arithmetics(final SizzleType that) {
 		// if that is a function, try its return type
 		if (that instanceof SizzleFunction)
 			return this.arithmetics(((SizzleFunction) that).getType());
@@ -18,6 +18,12 @@ public class SizzleTime extends SizzleScalar {
 			return new SizzleTime();
 
 		return super.arithmetics(that);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
+		return this.assigns(that);
 	}
 
 	/** {@inheritDoc} */

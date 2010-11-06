@@ -210,34 +210,6 @@ public class SizzleSpecialIntrinsics {
 		// will someone ever trigger this obscure bug?
 		return SizzleSpecialIntrinsics.saw(Integer.MAX_VALUE, string, regexes);
 	}
-
-	/**
-	 * Returns the length of the given {@link String}.
-	 * 
-	 * @param string
-	 *            A {@link String} to be to be measured
-	 * 
-	 * @return The length of <i>string</i>
-	 * 
-	 */
-	@FunctionSpec(name = "len", returnType = "int", formalParameters = { "string" })
-	public static long length(final String string) {
-		return string.length();
-	}
-
-	/**
-	 * Returns the length of the given array of byte.
-	 * 
-	 * @param array
-	 *            An array of byte to be to be measured
-	 * 
-	 * @return The length of <i>array</i>
-	 * 
-	 */
-	@FunctionSpec(name = "len", returnType = "int", formalParameters = { "bytes" })
-	public static long len(final byte[] array) {
-		return array.length;
-	}
 }
 
 class SawyerReturn {

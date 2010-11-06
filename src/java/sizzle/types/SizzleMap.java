@@ -49,6 +49,29 @@ public class SizzleMap extends SizzleType {
 		return true;
 	}
 
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
+		// if that is a function, check the return value
+		if (that instanceof SizzleFunction)
+			return this.assigns(((SizzleFunction) that).getType());
+
+		// otherwise, if that is not a map, forget it
+		if (!(that instanceof SizzleMap))
+			return false;
+
+		// if that index type is not equivalent this this's, forget it
+		if (!((SizzleMap) that).indexType.accepts(this.indexType))
+			return false;
+
+		// same for the value type
+		if (!((SizzleMap) that).type.accepts(this.type))
+			return false;
+
+		// ok
+		return true;
+	}
+
 	/**
 	 * Get the type of the values of this map.
 	 * 

@@ -37,6 +37,18 @@ public abstract class SizzleType {
 	}
 
 	/**
+	 * Returns true when an expression of that type may be used as a formal
+	 * parameter of this type.
+	 * 
+	 * @return A boolean representing whether an expression of that type may be
+	 *         used as a formal parameter of this type
+	 */
+	public boolean accepts(final SizzleType that) {
+		// by default no types will be accepted
+		return false;
+	}
+
+	/**
 	 * Returns true when an expression of that type may be compared to an
 	 * expression of this type.
 	 * 

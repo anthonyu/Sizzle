@@ -11,12 +11,17 @@ import sizzle.compiler.TypeException;
 public class SizzleFingerprint extends SizzleScalar {
 	/** {@inheritDoc} */
 	@Override
-	public SizzleScalar arithmetics(SizzleType that) {
+	public SizzleScalar arithmetics(final SizzleType that) {
 		// no math for fingerprints
-		throw new TypeException("incorrect type " + this
-				+ " for arithmetic with " + that);
+		throw new TypeException("incorrect type " + this + " for arithmetic with " + that);
 	}
-	
+
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
+		return this.assigns(that);
+	}
+
 	/** {@inheritDoc} */
 	@Override
 	public String toJavaType() {

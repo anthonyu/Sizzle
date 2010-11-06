@@ -38,10 +38,25 @@ public class SizzleArray extends SizzleType {
 			return false;
 
 		// if the element types are wrong, forget it
-		if (((SizzleArray) that).type.equals(this.type))
+		if (this.type.assigns(((SizzleArray) that).type))
 			return true;
 
-		if (this.type.equals(new SizzleAny()))
+		return false;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public boolean accepts(final SizzleType that) {
+		// if that is a function, check its return type
+		if (that instanceof SizzleFunction)
+			return this.assigns(((SizzleFunction) that).getType());
+
+		// otherwise, if it's not an array, forget it
+		if (!(that instanceof SizzleArray))
+			return false;
+
+		// if the element types are wrong, forget it
+		if (this.type.accepts(((SizzleArray) that).type))
 			return true;
 
 		return false;
