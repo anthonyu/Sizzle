@@ -142,8 +142,8 @@ public class SymbolTable {
 				new SizzleScalar(), new SizzleScalar() }, "(${0}.containsKey(${1}) ? ${0}.get(${1}) : ${2})"));
 
 		// these fingerprints are identity functions
-		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }, ""));
-		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleTime() }, ""));
+		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }, "${0}"));
+		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleTime() }, "${0}"));
 
 		/* expose all the casting constructors to Sawzall */
 
