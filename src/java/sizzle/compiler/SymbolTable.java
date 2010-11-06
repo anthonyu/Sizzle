@@ -142,8 +142,8 @@ public class SymbolTable {
 				new SizzleScalar(), new SizzleScalar() }, "(${0}.containsKey(${1}) ? ${0}.get(${1}) : ${2})"));
 
 		// these fingerprints are identity functions
-		this.setFunction("fingerprintof", new SizzleFunction("", new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }));
-		this.setFunction("fingerprintof", new SizzleFunction("", new SizzleFingerprint(), new SizzleScalar[] { new SizzleTime() }));
+		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }, ""));
+		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleTime() }, ""));
 
 		/* expose all the casting constructors to Sawzall */
 
@@ -156,9 +156,9 @@ public class SymbolTable {
 		// float to int
 		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleFloat() }, "(long)${0}"));
 		// time to int
-		this.setFunction("int", new SizzleFunction("", new SizzleInt(), new SizzleScalar[] { new SizzleTime() }));
+		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleTime() }, "${0}"));
 		// fingerprint to int
-		this.setFunction("int", new SizzleFunction("", new SizzleInt(), new SizzleScalar[] { new SizzleFingerprint() }));
+		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleFingerprint() }, "${0}"));
 		// string to int
 		this.setFunction("int", new SizzleFunction("java.lang.Long.decode", new SizzleInt(), new SizzleScalar[] { new SizzleString() }));
 		// string to int with param base
@@ -168,12 +168,12 @@ public class SymbolTable {
 				new SizzleString() }));
 
 		// int to float
-		this.setFunction("float", new SizzleFunction("(double)", new SizzleFloat(), new SizzleScalar[] { new SizzleInt() }));
+		this.setFunction("float", new SizzleFunction(new SizzleFloat(), new SizzleScalar[] { new SizzleInt() }, "(double)${0}"));
 		// string to float
 		this.setFunction("float", new SizzleFunction("java.lang.Double.parseDouble", new SizzleFloat(), new SizzleScalar[] { new SizzleString() }));
 
 		// int to time
-		this.setFunction("time", new SizzleFunction("", new SizzleTime(), new SizzleScalar[] { new SizzleInt() }));
+		this.setFunction("time", new SizzleFunction(new SizzleTime(), new SizzleScalar[] { new SizzleInt() }, "${0}"));
 		// string to time
 		this.setFunction("time", new SizzleFunction("sizzle.functions.SizzleCasts.stringToTime", new SizzleTime(), new SizzleScalar[] { new SizzleString() }));
 		// string to time
@@ -181,7 +181,7 @@ public class SymbolTable {
 				new SizzleString() }));
 
 		// int to fingerprint
-		this.setFunction("fingerprint", new SizzleFunction("", new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }));
+		this.setFunction("fingerprint", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }, "${0}"));
 		// string to fingerprint
 		this.setFunction("fingerprint", new SizzleFunction("java.lang.Long.parseLong", new SizzleInt(), new SizzleScalar[] { new SizzleString(), }));
 		// string to fingerprint with param base
