@@ -12,6 +12,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.log4j.Logger;
 
 import sizzle.aggregators.Aggregator;
+import sizzle.aggregators.FinishedException;
 import sizzle.io.EmitKey;
 import sizzle.io.EmitValue;
 
@@ -80,6 +81,9 @@ public abstract class SizzleReducer extends Reducer<EmitKey, EmitValue, Text, Nu
 			try {
 				// aggregate it
 				a.aggregate(value.getData(), value.getMetadata());
+			} catch (final FinishedException e) {
+				// we are done
+				return;
 			} catch (final IOException e) {
 				// won't be robust to IOException
 				throw e;

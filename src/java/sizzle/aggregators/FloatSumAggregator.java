@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import sizzle.io.EmitKey;
 
-
 /**
  * A Sizzle aggregator to calculate the sum of the values in a dataset.
  * 
@@ -17,7 +16,7 @@ public class FloatSumAggregator extends Aggregator {
 
 	/** {@inheritDoc} */
 	@Override
-	public void start(EmitKey key) {
+	public void start(final EmitKey key) {
 		super.start(key);
 
 		this.sum = 0;
@@ -25,7 +24,7 @@ public class FloatSumAggregator extends Aggregator {
 
 	/** {@inheritDoc} */
 	@Override
-	public void aggregate(String data, String metadata) throws IOException, InterruptedException {
+	public void aggregate(final String data, final String metadata) throws IOException, InterruptedException, FinishedException {
 		if (data.indexOf('.') != -1)
 			this.aggregate(Double.parseDouble(data));
 		else
@@ -34,13 +33,13 @@ public class FloatSumAggregator extends Aggregator {
 
 	/** {@inheritDoc} */
 	@Override
-	public void aggregate(long data, String metadata) {
+	public void aggregate(final long data, final String metadata) {
 		this.sum += data;
 	}
 
 	/** {@inheritDoc} */
 	@Override
-	public void aggregate(double data, String metadata) {
+	public void aggregate(final double data, final String metadata) {
 		this.sum += data;
 	}
 

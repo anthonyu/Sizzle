@@ -54,25 +54,25 @@ public abstract class Aggregator {
 		this.setKey(key);
 	}
 
-	public abstract void aggregate(String data, String metadata) throws IOException, InterruptedException;
+	public abstract void aggregate(String data, String metadata) throws IOException, InterruptedException, FinishedException;
 
-	public void aggregate(final String data) throws IOException, InterruptedException {
+	public void aggregate(final String data) throws IOException, InterruptedException, FinishedException {
 		this.aggregate(data, null);
 	}
 
-	public void aggregate(final long data, final String metadata) throws IOException, InterruptedException {
+	public void aggregate(final long data, final String metadata) throws IOException, InterruptedException, FinishedException {
 		this.aggregate(Long.toString(data), metadata);
 	}
 
-	public void aggregate(final long data) throws IOException, InterruptedException {
+	public void aggregate(final long data) throws IOException, InterruptedException, FinishedException {
 		this.aggregate(data, null);
 	}
 
-	public void aggregate(final double data, final String metadata) throws IOException, InterruptedException {
+	public void aggregate(final double data, final String metadata) throws IOException, InterruptedException, FinishedException {
 		this.aggregate(Double.toString(data), metadata);
 	}
 
-	public void aggregate(final double data) throws IOException, InterruptedException {
+	public void aggregate(final double data) throws IOException, InterruptedException, FinishedException {
 		this.aggregate(data, null);
 	}
 
