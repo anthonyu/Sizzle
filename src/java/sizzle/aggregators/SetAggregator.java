@@ -3,6 +3,8 @@ package sizzle.aggregators;
 import java.io.IOException;
 import java.util.HashSet;
 
+import sizzle.io.EmitKey;
+
 /**
  * A Sizzle aggregator to filter the values in a dataset by maximum size.
  * 
@@ -11,7 +13,7 @@ import java.util.HashSet;
  */
 @AggregatorSpec(name = "set")
 public class SetAggregator extends Aggregator {
-	private final HashSet<String> set;
+	private HashSet<String> set;
 	private final long max;
 
 	/**
@@ -23,11 +25,16 @@ public class SetAggregator extends Aggregator {
 	public SetAggregator(final long n) {
 		super(n);
 
-		// the set of data to be collected
-		this.set = new HashSet<String>();
-
 		// the maximum size we will pass through
 		this.max = n;
+	}
+
+	@Override
+	public void start(final EmitKey key) {
+		super.start(key);
+
+		// the set of data to be collected
+		this.set = new HashSet<String>();
 	}
 
 	/** {@inheritDoc} */

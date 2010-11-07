@@ -17,7 +17,7 @@ import sizzle.io.EmitKey;
  */
 @AggregatorSpec(name = "top", formalParameters = { "int" }, weightType = "int")
 public class TopAggregator extends Aggregator {
-	private final CountingSet<String> set;
+	private CountingSet<String> set;
 	private final CountedString[] list;
 	private final int last;
 
@@ -30,8 +30,6 @@ public class TopAggregator extends Aggregator {
 	public TopAggregator(final long n) {
 		super(n);
 
-		this.set = new CountingSet<String>();
-
 		// an array of weighted string of length n
 		this.list = new CountedString[(int) n];
 		// the index of the last entry in the list
@@ -42,6 +40,8 @@ public class TopAggregator extends Aggregator {
 	@Override
 	public void start(final EmitKey key) {
 		super.start(key);
+
+		this.set = new CountingSet<String>();
 
 		// clear out the list
 		for (int i = 0; i < this.getArg(); i++)
@@ -89,7 +89,8 @@ public class TopAggregator extends Aggregator {
 			}
 
 			for (final CountedString c : this.list)
-				this.collect(c.toString());
+				if (c.getCount() > Long.MIN_VALUE)
+					this.collect(c.toString());
 		}
 	}
 
@@ -166,7 +167,7 @@ class CountedString {
  *            The type of value that will be inserted into the set
  */
 class CountingSet<T> {
-	private final Map<T, Long> map;
+	private Map<T, Long> map;
 
 	/**
 	 * Construct a CountingSet.
@@ -201,6 +202,10 @@ class CountingSet<T> {
 			this.map.put(t, Long.valueOf(this.map.get(t).longValue() + n));
 		else
 			this.map.put(t, Long.valueOf(n));
+	}
+
+	public void clear() {
+		this.map = new HashMap<T, Long>();
 	}
 
 	/**

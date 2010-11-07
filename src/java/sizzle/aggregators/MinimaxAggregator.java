@@ -25,7 +25,8 @@ abstract class MinOrMaxAggregator extends Aggregator {
 		super(n);
 
 		// an array of weighted string of length n
-		this.list = new WeightedString[(int) n];
+		this.list = new WeightedString[(int) this.getArg()];
+
 		// the index of the last entry in the list
 		this.last = (int) (this.getArg() - 1);
 	}
