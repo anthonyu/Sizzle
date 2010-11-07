@@ -531,4 +531,42 @@ public class TestCodeGeneratingVisitor {
 		mapReduceDriver.addOutput(new Text("times[PST8PDT] = Sun Feb 2 00:00:00 PST 2003"), NullWritable.get());
 		mapReduceDriver.runTest();
 	}
+
+	@Test
+	public void testCodeGeneratingVisitorTopReferers() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
+		final String source = "best: table top(3)[url: string] of referer: string weight count: int;\nline: string = input;\nfields: array of string = saw(line, \".*GET \", \"[^\\t ]+\", \" HTTP/1.[0-9]\\\"\", \"[0-9]+\", \"[0-9]+\", \"\\\"[^\\t ]+\\\"\");\nemit best[fields[1]] <- fields[5] weight 1;\n";
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("TopReferers");
+		SymbolTable st;
+		try {
+			st = new SymbolTable();
+		} catch (final IOException e) {
+			throw new RuntimeException(e.getClass().getSimpleName() + " caught", e);
+		}
+
+		SizzleParser.ReInit(new StringReader(source));
+		TestCodeGeneratingVisitor.typeChecker.visit(SizzleParser.Start(), st);
+		SizzleParser.ReInit(new StringReader(source));
+		final String src = codeGenerator.visit(SizzleParser.Start(), st);
+
+		SizzleRunner sizzleRunner = null;
+		try {
+			sizzleRunner = TestCodeGeneratingVisitor.compiler.compile("sizzle.TopReferers", src, null, new Class<?>[] { SizzleRunner.class }).newInstance();
+		} catch (final CharSequenceCompilerException e) {
+			for (final Diagnostic<? extends JavaFileObject> d : e.getDiagnostics().getDiagnostics())
+				System.err.println(d.toString());
+			throw e;
+		}
+
+		final MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable> mapReduceDriver = new MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable>();
+		mapReduceDriver.setMapper(sizzleRunner.getMapper());
+		// TODO: add the combiner when MAPREDUCE-797 is integrated
+		mapReduceDriver.setReducer(sizzleRunner.getReducer());
+		mapReduceDriver
+				.addInput(
+						new LongWritable(0),
+						new Text(
+								"127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] \"GET /apache_pb.gif HTTP/1.0\" 200 2326 \"http://www.example.com/start.html\" \"Mozilla/4.08 [en] (Win98; I ;Nav)\""));
+		mapReduceDriver.addOutput(new Text("best[/apache_pb.gif] = \"http://www.example.com/start.html\", 1, 0"), NullWritable.get());
+		mapReduceDriver.runTest();
+	}
 }
