@@ -1,0 +1,42 @@
+#
+# best_referers.szl
+#
+# a program to aggregate the best three referers for a given url on our site
+#
+
+# this first line has a lot going on
+#
+# first, declare a 'top' aggregator, which filters out all but the top n
+# values emitted to it by count
+#
+# name it 'best'
+#
+# specify that we want the top 3 results only
+#
+# specify that it will be indexed by a string named "url"
+#
+# specify that we will be emitting strings named "referer" to it
+#
+# finally, specify that the weight we will be emitting is an int named "count"
+#
+best: table top(3)[url: string] of referer: string weight count: int;
+
+# now, declare a string named "line" to hold the input value
+line: string = input;
+
+# use the 'saw' function to parse the line.  'saw' uses a variable number
+# of regular  expressions to chop a line into an array, sort of like other
+# languages' split() on steroids.  the regexes are pcre: http://pcre.org
+#
+# in this case we are chopping apache combined logs, specified here:
+# http://httpd.apache.org/docs/2.2/logs.html
+#
+# chop it up and store it in an array of string called "fields"
+#
+fields: array of string = saw(line, ".*GET ", "[^\t ]+", " HTTP/1.[0-9]\"", "[0-9]+", "[0-9]+", "\"[^\t ]+\"");
+
+# finally, just emit the url and its referer to the "best" table with a count
+# of one
+if (fields[5] != "\"-\"") { # || match(fields[5], "http://[^/]+killa.net/.*") ) {
+	emit best[fields[1]] <- fields[5] weight 1;
+}
