@@ -37,7 +37,7 @@ public abstract class SizzleRunner {
 
 		configuration.setBoolean("sizzle.runtime.robust", robust);
 
-		final Job job = Job.getInstance(new Cluster(configuration));
+		final Job job = Job.getInstance(new Cluster(configuration), configuration);
 
 		for (final Path in : ins)
 			FileInputFormat.addInputPath(job, in);
