@@ -99,8 +99,12 @@ public class SizzleCasts {
 	 * 
 	 * @throws ParseException
 	 */
-	public static long stringToTime(final String s) throws ParseException {
-		return SizzleCasts.stringToTime(s, "PST8PDT");
+	public static long stringToTime(final String s, final String tz) throws ParseException {
+		final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
+
+		simpleDateFormat.setCalendar(Calendar.getInstance(TimeZone.getTimeZone(tz)));
+
+		return simpleDateFormat.parse(s).getTime() * 1000;
 	}
 
 	/**
@@ -113,13 +117,8 @@ public class SizzleCasts {
 	 * 
 	 * @throws ParseException
 	 */
-	public static long stringToTime(final String s, final String tz) throws ParseException {
-		// t: time = "Apr 1 12:00:00 PST 2005";
-		final SimpleDateFormat sizzleDateFormat = new SimpleDateFormat("MMM d HH:mm:ss z yyyy");
-
-		sizzleDateFormat.setCalendar(Calendar.getInstance(TimeZone.getTimeZone(tz)));
-
-		return sizzleDateFormat.parse(s).getTime();
+	public static long stringToTime(final String s) throws ParseException {
+		return SizzleCasts.stringToTime(s, "PST8PDT");
 	}
 
 	/**
@@ -163,12 +162,14 @@ public class SizzleCasts {
 	 * @param t
 	 *            A long containing a time
 	 * 
+	 * @param tz
+	 *            A String containing the time zone to be used for formatting
+	 * 
 	 * @return A {@link String} containing the time represented by <em>t</em>.
 	 * 
 	 */
 	public static String timeToString(final long t, final String tz) {
-		// t: time = "Apr 1 12:00:00 PST 2005";
-		final SimpleDateFormat sizzleDateFormat = new SimpleDateFormat("MMM d HH:mm:ss z yyyy");
+		final SimpleDateFormat sizzleDateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
 
 		final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(tz));
 
@@ -177,6 +178,19 @@ public class SizzleCasts {
 		sizzleDateFormat.setCalendar(calendar);
 
 		return sizzleDateFormat.format(calendar.getTime());
+	}
+
+	/**
+	 * Format a time string.
+	 * 
+	 * @param t
+	 *            A long containing a time
+	 * 
+	 * @return A {@link String} containing the time represented by <em>t</em>.
+	 * 
+	 */
+	public static String timeToString(final long t) {
+		return SizzleCasts.timeToString(t, "PST8PDT");
 	}
 
 	/**

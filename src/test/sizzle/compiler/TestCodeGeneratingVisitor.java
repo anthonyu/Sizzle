@@ -495,4 +495,40 @@ public class TestCodeGeneratingVisitor {
 		mapReduceDriver.addOutput(new Text("xlated[] = Korean"), NullWritable.get());
 		mapReduceDriver.runTest();
 	}
+
+	@Test
+	public void testCodeGeneratingVisitorTimeParser() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
+		final String source = "times: table collection[timezone: string] of time: string;\ntime: string = input;\nemit times[\"PST8PDT\"] <- string(trunctoday(time(time)));emit times[\"America/New_York\"] <- string(trunctoday(time(time), \"America/New_York\"));\n";
+
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("TimeParser");
+		SymbolTable st;
+		try {
+			st = new SymbolTable();
+		} catch (final IOException e) {
+			throw new RuntimeException(e.getClass().getSimpleName() + " caught", e);
+		}
+
+		SizzleParser.ReInit(new StringReader(source));
+		TestCodeGeneratingVisitor.typeChecker.visit(SizzleParser.Start(), st);
+		SizzleParser.ReInit(new StringReader(source));
+		final String src = codeGenerator.visit(SizzleParser.Start(), st);
+
+		SizzleRunner sizzleRunner = null;
+		try {
+			sizzleRunner = TestCodeGeneratingVisitor.compiler.compile("sizzle.TimeParser", src, null, new Class<?>[] { SizzleRunner.class }).newInstance();
+		} catch (final CharSequenceCompilerException e) {
+			for (final Diagnostic<? extends JavaFileObject> d : e.getDiagnostics().getDiagnostics())
+				System.err.println(d.toString());
+			throw e;
+		}
+
+		final MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable> mapReduceDriver = new MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable>();
+		mapReduceDriver.setMapper(sizzleRunner.getMapper());
+		// TODO: add the combiner when MAPREDUCE-797 is integrated
+		mapReduceDriver.setReducer(sizzleRunner.getReducer());
+		mapReduceDriver.addInput(new LongWritable(0), new Text("Sun Feb  2 23:40:08 PST 2003"));
+		mapReduceDriver.addOutput(new Text("times[America/New_York] = Sun Feb 2 21:00:00 PST 2003"), NullWritable.get());
+		mapReduceDriver.addOutput(new Text("times[PST8PDT] = Sun Feb 2 00:00:00 PST 2003"), NullWritable.get());
+		mapReduceDriver.runTest();
+	}
 }

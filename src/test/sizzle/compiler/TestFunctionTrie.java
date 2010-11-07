@@ -5,7 +5,6 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import sizzle.types.SizzleAny;
-import sizzle.types.SizzleArray;
 import sizzle.types.SizzleBool;
 import sizzle.types.SizzleFloat;
 import sizzle.types.SizzleFunction;
