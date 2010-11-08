@@ -45,8 +45,8 @@ public class SizzleTimeIntrinsics {
 		SizzleTimeIntrinsics.strftimeMap.put('Z', new SimpleDateFormat("zzz"));
 	}
 
-	private static long addPart(final int part, final long t, final long n, final TimeZone timeZone) {
-		final Calendar calendar = Calendar.getInstance(timeZone);
+	private static long addPart(final int part, final long t, final long n, final TimeZone tz) {
+		final Calendar calendar = Calendar.getInstance(tz);
 
 		calendar.setTimeInMillis(t / 1000);
 
@@ -837,7 +837,9 @@ public class SizzleTimeIntrinsics {
 			default:
 				if (inEscape) {
 					if (SizzleTimeIntrinsics.strftimeMap.containsKey(Character.valueOf(c))) {
-						sb.append(SizzleTimeIntrinsics.strftimeMap.get(Character.valueOf(c)).format(calendar.getTime()));
+						final SimpleDateFormat simpleDateFormat = SizzleTimeIntrinsics.strftimeMap.get(Character.valueOf(c));
+						simpleDateFormat.setTimeZone(tz);
+						sb.append(simpleDateFormat.format(calendar.getTime()));
 					} else {
 						throw new RuntimeException("invalid escape string: %" + c);
 					}

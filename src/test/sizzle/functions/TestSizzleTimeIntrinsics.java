@@ -14,8 +14,7 @@ public class TestSizzleTimeIntrinsics {
 		calendar.set(2001, 1, 28, 0, 0, 0);
 		final long t = calendar.getTimeInMillis() * 1000;
 
-		Assert.assertEquals("addDay is wrong", "Thu Mar 1 00:00:00 2001",
-				SizzleTimeIntrinsics.formatTime("%c", SizzleTimeIntrinsics.addDay(t, 1, "PST8PDT"), "PST8PDT"));
+		Assert.assertEquals("addDay is wrong", "Thu Mar 1 00:00:00 2001", SizzleTimeIntrinsics.formatTime("%c", SizzleTimeIntrinsics.addDay(t, 1)));
 	}
 
 	@Test
@@ -24,13 +23,13 @@ public class TestSizzleTimeIntrinsics {
 		calendar.set(2001, 1, 28, 0, 0, 0);
 		final long t = calendar.getTimeInMillis() * 1000;
 
-		Assert.assertEquals("dayOfMonth is wrong", 28, SizzleTimeIntrinsics.dayOfMonth(t, "PST8PDT"));
+		Assert.assertEquals("dayOfMonth is wrong", 28, SizzleTimeIntrinsics.dayOfMonth(t));
 	}
 
 	@Test
 	public void testSizzleTimeIntrinsicsTruncateToDay() {
 		Assert.assertEquals("truncateToDay is wrong", "Fri Feb 13 00:00:00 2009",
-				SizzleTimeIntrinsics.formatTime("%c", SizzleTimeIntrinsics.truncToDay(1234567890000000l, "PST8PDT"), "PST8PDT"));
+				SizzleTimeIntrinsics.formatTime("%c", SizzleTimeIntrinsics.truncToDay(1234567890000000l)));
 	}
 
 	@Test
@@ -40,6 +39,6 @@ public class TestSizzleTimeIntrinsics {
 		final long t = calendar.getTimeInMillis() * 1000;
 
 		Assert.assertEquals("formatTime is wrong", "% That was Wed Feb 28 00:00:00 2001 in timezone PST %",
-				SizzleTimeIntrinsics.formatTime("%% That was %c in timezone %Z %%", t, "PST8PDT"));
+				SizzleTimeIntrinsics.formatTime("%% That was %c in timezone %Z %%", t));
 	}
 }
