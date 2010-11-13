@@ -314,9 +314,10 @@ public class SizzleStringIntrinsics {
 	 * indicated by the second argument (numbered starting at 1). The return
 	 * value is a flat array of the collected fields.
 	 * 
-	 * @param s
+	 * @param csv An arry of byte containing the input data
+         * @param fields An array of long specified the fields to be returned
 	 * 
-	 * @return
+	 * @return An array of byte[] containing the collected fields
 	 */
 	@FunctionSpec(name = "splitcsv", returnType = "array of bytes", formalParameters = { "bytes", "array of int" })
 	public static byte[][] splitCsv(final byte[] csv, final long[] fields) {

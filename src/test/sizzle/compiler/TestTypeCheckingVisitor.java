@@ -397,4 +397,13 @@ public class TestTypeCheckingVisitor {
 		Assert.assertEquals("CJK is not a mapping from string to string", new SizzleMap(new SizzleString(), new SizzleString()), st.get("CJK"));
 	}
 
+	@Test(expected = TypeException.class)
+	public void testTypeCheckingVisitorTypeDeclaredAsVariable() throws IOException, ParseException {
+		final String source = "times: table collection[timezone: string] of time: string;\ntime: string = input;\nemit times[\"PST8PDT\"] <- string(trunctoday(time(time)));emit times[\"America/New_York\"] <- string(trunctoday(time(time), \"America/New_York\"));\n";
+
+		final SymbolTable st = new SymbolTable();
+
+		SizzleParser.ReInit(new StringReader(source));
+		TestTypeCheckingVisitor.typeChecker.visit(SizzleParser.Start(), st);
+	}
 }

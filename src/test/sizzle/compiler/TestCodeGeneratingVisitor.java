@@ -498,7 +498,7 @@ public class TestCodeGeneratingVisitor {
 
 	@Test
 	public void testCodeGeneratingVisitorTimeParser() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
-		final String source = "times: table collection[timezone: string] of time: string;\ntime: string = input;\nemit times[\"PST8PDT\"] <- string(trunctoday(time(time)));emit times[\"America/New_York\"] <- string(trunctoday(time(time), \"America/New_York\"));\n";
+		final String source = "times: table collection[timezone: string] of time: string;\nt: string = input;\nemit times[\"PST8PDT\"] <- string(trunctoday(time(t)));emit times[\"America/New_York\"] <- string(trunctoday(time(t), \"America/New_York\"));\n";
 
 		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("TimeParser");
 		SymbolTable st;
@@ -567,6 +567,46 @@ public class TestCodeGeneratingVisitor {
 						new Text(
 								"127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] \"GET /apache_pb.gif HTTP/1.0\" 200 2326 \"http://www.example.com/start.html\" \"Mozilla/4.08 [en] (Win98; I ;Nav)\""));
 		mapReduceDriver.addOutput(new Text("best[/apache_pb.gif] = \"http://www.example.com/start.html\", 1, 0"), NullWritable.get());
+		mapReduceDriver.runTest();
+	}
+
+	@Test
+	public void testCodeGeneratingVisitorRegex() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
+		final String source = "out: table collection[name: string] of output: string;\nemit out[\"int,16\"] <- regex(int, 16);\nemit out[\"int,10\"] <- regex(int, 10);\nemit out[\"int,8\"] <- regex(int, 8);\nemit out[\"float\"] <- regex(float);\nemit out[\"time\"] <- regex(time);\nemit out[\"string\"] <- regex(string);\n";
+
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("Regex");
+		SymbolTable st;
+		try {
+			st = new SymbolTable();
+		} catch (final IOException e) {
+			throw new RuntimeException(e.getClass().getSimpleName() + " caught", e);
+		}
+
+		SizzleParser.ReInit(new StringReader(source));
+		TestCodeGeneratingVisitor.typeChecker.visit(SizzleParser.Start(), st);
+		SizzleParser.ReInit(new StringReader(source));
+		final String src = codeGenerator.visit(SizzleParser.Start(), st);
+
+		SizzleRunner sizzleRunner = null;
+		try {
+			sizzleRunner = TestCodeGeneratingVisitor.compiler.compile("sizzle.Regex", src, null, new Class<?>[] { SizzleRunner.class }).newInstance();
+		} catch (final CharSequenceCompilerException e) {
+			for (final Diagnostic<? extends JavaFileObject> d : e.getDiagnostics().getDiagnostics())
+				System.err.println(d.toString());
+			throw e;
+		}
+
+		final MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable> mapReduceDriver = new MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable>();
+		mapReduceDriver.setMapper(sizzleRunner.getMapper());
+		// TODO: add the combiner when MAPREDUCE-797 is integrated
+		mapReduceDriver.setReducer(sizzleRunner.getReducer());
+		mapReduceDriver.addInput(new LongWritable(0), new Text(""));
+		mapReduceDriver.addOutput(new Text("out[float] = [-+]?[0-9]*\\.?[0-9]+(e[-+]?[0-9]+)?"), NullWritable.get());
+		mapReduceDriver.addOutput(new Text("out[int,10] = [+-]?[0-9]+"), NullWritable.get());
+		mapReduceDriver.addOutput(new Text("out[int,16] = (0x)?[A-Fa-f0-9]+h?"), NullWritable.get());
+		mapReduceDriver.addOutput(new Text("out[int,8] = 0[0-7]+"), NullWritable.get());
+		mapReduceDriver.addOutput(new Text("out[string] = \\S+"), NullWritable.get());
+		mapReduceDriver.addOutput(new Text("out[time] = [0-9]+"), NullWritable.get());
 		mapReduceDriver.runTest();
 	}
 }

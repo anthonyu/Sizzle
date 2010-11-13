@@ -36,6 +36,7 @@ import sizzle.types.SizzleTable;
 import sizzle.types.SizzleTime;
 import sizzle.types.SizzleTuple;
 import sizzle.types.SizzleType;
+import sizzle.types.SizzleName;
 import sizzle.types.SizzleVarargs;
 
 public class SymbolTable {
@@ -119,10 +120,7 @@ public class SymbolTable {
 
 		// variables with a local scope
 		this.locals = new HashMap<String, SizzleType>();
-
 		this.aggregators = new HashMap<String, Class<?>>();
-		// TODO: this needs to be a tree in order to properly handle generic
-		// intrinsics
 		this.functions = new FunctionTrie();
 
 		// these generic functions require more finagling than can currently be
@@ -141,6 +139,10 @@ public class SymbolTable {
 		this.setFunction("lookup", new SizzleFunction(new SizzleScalar(), new SizzleType[] { new SizzleMap(new SizzleScalar(), new SizzleScalar()),
 				new SizzleScalar(), new SizzleScalar() }, "(${0}.containsKey(${1}) ? ${0}.get(${1}) : ${2})"));
 
+		this.setFunction("regex", new SizzleFunction(new SizzleString(), new SizzleType[] { new SizzleName(new SizzleScalar()), new SizzleInt() },
+				"sizzle.functions.SizzleSpecialIntrinsics.regex(\"${0}\", ${1})"));
+		this.setFunction("regex", new SizzleFunction(new SizzleString(), new SizzleType[] { new SizzleName(new SizzleScalar()) },
+				"sizzle.functions.SizzleSpecialIntrinsics.regex(\"${0}\")"));
 		// these fingerprints are identity functions
 		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }, "${0}"));
 		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleTime() }, "${0}"));
@@ -306,6 +308,9 @@ public class SymbolTable {
 	}
 
 	public void set(final String id, final SizzleType type, final boolean global) {
+		if (this.idmap.containsKey(id))
+			throw new TypeException(id + " already declared as " + this.idmap.get(id));
+
 		if (global)
 			this.globals.put(id, type);
 		else
@@ -317,6 +322,9 @@ public class SymbolTable {
 	}
 
 	public SizzleType get(final String id) {
+		if (this.idmap.containsKey(id))
+			return new SizzleName(this.idmap.get(id));
+
 		if (this.globals.containsKey(id))
 			return this.globals.get(id);
 
@@ -324,6 +332,10 @@ public class SymbolTable {
 			return this.locals.get(id);
 
 		throw new TypeException("no such identifier " + id);
+	}
+
+	public boolean hasType(final String id) {
+		return this.idmap.containsKey(id);
 	}
 
 	public SizzleType getType(final String id) {

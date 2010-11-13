@@ -4,7 +4,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,6 +23,7 @@ import java.util.regex.Pattern;
  */
 public class SizzleSpecialIntrinsics {
 	private static MessageDigest md;
+	private static Map<String, String> regexMap;
 
 	static {
 		try {
@@ -28,6 +31,15 @@ public class SizzleSpecialIntrinsics {
 		} catch (final NoSuchAlgorithmException e) {
 			throw new RuntimeException(e.getClass().getSimpleName() + " caught", e);
 		}
+
+		SizzleSpecialIntrinsics.regexMap = new HashMap<String, String>();
+		SizzleSpecialIntrinsics.regexMap.put("int,16", "(0x)?[A-Fa-f0-9]+h?");
+		SizzleSpecialIntrinsics.regexMap.put("int,10", "[+-]?[0-9]+");
+		SizzleSpecialIntrinsics.regexMap.put("int,8", "0[0-7]+");
+		SizzleSpecialIntrinsics.regexMap.put("string", "\\S+");
+		SizzleSpecialIntrinsics.regexMap.put("time", "[0-9]+");
+		SizzleSpecialIntrinsics.regexMap.put("fingerprint", "[0-9]+");
+		SizzleSpecialIntrinsics.regexMap.put("float", "[-+]?[0-9]*\\.?[0-9]+(e[-+]?[0-9]+)?");
 	}
 
 	/**
@@ -151,7 +163,20 @@ public class SizzleSpecialIntrinsics {
 	}
 
 	// TODO: implement new()
-	// TODO: implement regex()
+
+	public static String regex(final String type, final int base) {
+		if (SizzleSpecialIntrinsics.regexMap.containsKey(type + "," + base))
+			return SizzleSpecialIntrinsics.regexMap.get(type + "," + base);
+		else
+			throw new RuntimeException("unimplemented");
+	}
+
+	public static String regex(final String type) {
+		if (SizzleSpecialIntrinsics.regexMap.containsKey(type))
+			return SizzleSpecialIntrinsics.regexMap.get(type);
+		else
+			throw new RuntimeException("unimplemented");
+	}
 
 	private static SawyerReturn sawyer(final String string, final String[] regexes) {
 		final List<String> result = new ArrayList<String>();
@@ -165,9 +190,9 @@ public class SizzleSpecialIntrinsics {
 						Arrays.copyOfRange(regexes, 1, regexes.length));
 
 				result.add(string.substring(matcher.start(), matcher.end()));
-				result.addAll(sawyerReturn.result);
+				result.addAll(sawyerReturn.getResult());
 
-				return new SawyerReturn(result, sawyerReturn.leftover);
+				return new SawyerReturn(result, sawyerReturn.getLeftover());
 			} else {
 				result.add(string.substring(matcher.start(), matcher.end()));
 
@@ -185,11 +210,11 @@ public class SizzleSpecialIntrinsics {
 		String todo = string;
 		for (int i = 0; i < n; i++) {
 			final SawyerReturn sawyerReturn = SizzleSpecialIntrinsics.sawyer(todo, Arrays.copyOf(regexes, regexes.length));
-			result.addAll(sawyerReturn.result);
-			if (sawyerReturn.leftover.equals("") || sawyerReturn.leftover.equals(todo))
+			result.addAll(sawyerReturn.getResult());
+			if (sawyerReturn.getLeftover().equals("") || sawyerReturn.getLeftover().equals(todo))
 				break;
 
-			todo = sawyerReturn.leftover;
+			todo = sawyerReturn.getLeftover();
 		}
 
 		return result.toArray(new String[result.size()]);
@@ -213,11 +238,19 @@ public class SizzleSpecialIntrinsics {
 }
 
 class SawyerReturn {
-	List<String> result;
-	String leftover;
+	private final List<String> result;
+	private final String leftover;
 
 	public SawyerReturn(final List<String> result, final String leftover) {
 		this.result = result;
 		this.leftover = leftover;
+	}
+
+	public List<String> getResult() {
+		return this.result;
+	}
+
+	public String getLeftover() {
+		return this.leftover;
 	}
 }

@@ -419,13 +419,17 @@ public class CodeGeneratingVisitor extends GJDepthFirst<String, SymbolTable> {
 	@Override
 	public String visit(final Identifier n, final SymbolTable argu) {
 		// TODO: support protobufs/sequence files/avro here
+		final String id = n.f0.tokenImage;
+
+		if (argu.hasType(id))
+			return argu.getType(id).toString();
 
 		// check if it is a special constant
-		if (this.codeMap.containsKey(n.f0.tokenImage))
-			return this.codeMap.get(n.f0.tokenImage);
+		if (this.codeMap.containsKey(id))
+			return this.codeMap.get(id);
 
 		// otherwise return the Java variable name
-		return "___" + n.f0.tokenImage;
+		return "___" + id;
 	}
 
 	/** {@inheritDoc} */
