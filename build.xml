@@ -98,6 +98,8 @@
 				</patternset>
 			</fileset>
 			<fileset dir="conf" />
+			<zipfileset excludes="META-INF/" src="lib/commons-logging-1.1.1.jar" />
+			<zipfileset excludes="META-INF/" src="lib/hadoop-common-0.21.0.jar" />
 			<zipfileset excludes="META-INF/" src="lib/log4j-1.2.15.jar" />
 			<zipfileset excludes="META-INF/" src="lib/commons-cli-1.2.jar" />
 			<zipfileset excludes="META-INF/" src="lib/scannotation-1.0.2.jar" />
