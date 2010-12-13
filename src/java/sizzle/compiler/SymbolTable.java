@@ -8,7 +8,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,6 +19,7 @@ import org.scannotation.ClasspathUrlFinder;
 
 import sizzle.aggregators.AggregatorSpec;
 import sizzle.aggregators.IntSumAggregator;
+import sizzle.aggregators.Table;
 import sizzle.functions.FunctionSpec;
 import sizzle.types.SizzleAny;
 import sizzle.types.SizzleArray;
@@ -100,11 +100,12 @@ public class SymbolTable {
 		this.idmap.put("bytes", new SizzleBytes());
 
 		// does the same for arrays
-		for (final String key : new HashSet<String>(this.idmap.keySet())) {
-			final SizzleType value = this.idmap.get(key);
-			if (value instanceof SizzleScalar)
-				this.idmap.put("array of " + key, new SizzleArray((SizzleScalar) value));
-		}
+		// for (final String key : new HashSet<String>(this.idmap.keySet())) {
+		// final SizzleType value = this.idmap.get(key);
+		// if (value instanceof SizzleScalar)
+		// this.idmap.put("array of " + key, new SizzleArray((SizzleScalar)
+		// value));
+		// }
 
 		// variables with a global scope
 		this.globals = new HashMap<String, SizzleType>();
@@ -277,13 +278,9 @@ public class SymbolTable {
 		}
 
 		// add in the default tables
-		final List<SizzleScalar> stdTypes = new ArrayList<SizzleScalar>();
-		stdTypes.add(new SizzleString());
-		this.set("stdout", new SizzleTable(stdTypes));
-		this.set("stderr", new SizzleTable(stdTypes));
-		final List<SizzleScalar> outputTypes = new ArrayList<SizzleScalar>();
-		stdTypes.add(new SizzleBytes());
-		this.set("output", new SizzleTable(outputTypes));
+		this.set("stdout", new SizzleTable(new SizzleString()));
+		this.set("stderr", new SizzleTable(new SizzleString()));
+		this.set("output", new SizzleTable(new SizzleBytes()));
 
 		this.importLibs(libs);
 	}
@@ -342,7 +339,16 @@ public class SymbolTable {
 		if (this.idmap.containsKey(id))
 			return this.idmap.get(id);
 
+		if (id.startsWith("array of "))
+			return new SizzleArray(this.getType(id.substring("array of ".length())));
+
+		System.err.println(this.idmap);
+
 		throw new TypeException("no such type " + id);
+	}
+
+	public void setType(final String id, final SizzleType sizzleType) {
+		this.idmap.put(id, sizzleType);
 	}
 
 	private void importAggregator(final Class<?> clazz) {
@@ -366,13 +372,28 @@ public class SymbolTable {
 		}
 	}
 
-	public Class<?> getAggregator(final String name, final SizzleScalar type) {
-		if (this.aggregators.containsKey(name + ":" + type))
-			return this.aggregators.get(name + ":" + type);
-		else if (this.aggregators.containsKey(name))
-			return this.aggregators.get(name);
-		else
-			throw new TypeException("no such aggregator " + name + " of " + type);
+	public Table getTable(final String name, final SizzleType sizzleType) {
+		if (sizzleType instanceof SizzleTuple) {
+			final List<Class<?>> aggregators = new ArrayList<Class<?>>();
+
+			for (final SizzleType subType : ((SizzleTuple) sizzleType).getTypes()) {
+				if (this.aggregators.containsKey(name + ":" + subType)) {
+					aggregators.add(this.aggregators.get(name + ":" + subType));
+				} else if (this.aggregators.containsKey(name)) {
+					aggregators.add(this.aggregators.get(name));
+				} else {
+					throw new TypeException("no such aggregator " + name + " of " + subType);
+				}
+			}
+
+			return new Table(aggregators);
+		} else if (this.aggregators.containsKey(name + ":" + sizzleType)) {
+			return new Table(this.aggregators.get(name + ":" + sizzleType));
+		} else if (this.aggregators.containsKey(name)) {
+			return new Table(this.aggregators.get(name));
+		} else {
+			throw new TypeException("no such aggregator " + name + " of " + sizzleType);
+		}
 	}
 
 	private void importFunction(final Method m) {
@@ -458,8 +479,10 @@ public class SymbolTable {
 		}
 
 		for (final Class<?> c : wrapper.getClasses()) {
-			final Map<String, SizzleType> members = new HashMap<String, SizzleType>();
+			final List<SizzleType> members = new ArrayList<SizzleType>();
+			final Map<String, Integer> names = new HashMap<String, Integer>();
 
+			int i = 0;
 			for (final Field field : c.getDeclaredFields()) {
 				if (!field.getName().endsWith("_"))
 					continue;
@@ -468,14 +491,12 @@ public class SymbolTable {
 
 				final Class<?> type = field.getType();
 
-				members.put(member, this.protomap.get(type));
+				names.put(member, i++);
+				members.add(this.protomap.get(type));
 			}
 
-			final SizzleTuple SizzleTuple = new SizzleTuple(c.getSimpleName(), members);
-			this.idmap.put(c.getSimpleName(), SizzleTuple);
+			this.idmap.put(c.getSimpleName(), new SizzleTuple(members, names));
 			// TODO support protocol buffer casts
-			// this.castmap.put("bytes2" + SizzleTuple, new
-			// SizzleFunction("UNIMPLEMENTED", new SizzleAny()));
 		}
 	}
 
