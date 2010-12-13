@@ -1,5 +1,8 @@
 package sizzle.types;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -10,23 +13,25 @@ import java.util.Map;
  * 
  */
 public class SizzleTuple extends SizzleType {
-	private String name;
-	private Map<String, SizzleType> members;
+	private final List<SizzleType> members;
+	private final Map<String, Integer> names;
 
 	/**
 	 * Construct a SizzleTuple.
 	 * 
-	 * @param name
-	 *            A {@link String} containing the name of this type
-	 * 
 	 * @param members
-	 *            A {@link Map} of {@link SizzleType} containing a mapping from
-	 *            the names to the types of the members of this tuple
+	 *            A {@link LinkedHashMap} of {@link SizzleType} containing a
+	 *            mapping from the names to the types of the members of this
+	 *            tuple
 	 * 
 	 */
-	public SizzleTuple(final String name, final Map<String, SizzleType> members) {
-		this.name = name;
+	public SizzleTuple(final List<SizzleType> members) {
+		this(members, new HashMap<String, Integer>());
+	}
+
+	public SizzleTuple(final List<SizzleType> members, final Map<String, Integer> names) {
 		this.members = members;
+		this.names = names;
 	}
 
 	/** {@inheritDoc} */
@@ -42,13 +47,26 @@ public class SizzleTuple extends SizzleType {
 		if (!(that instanceof SizzleTuple))
 			return false;
 
-		return ((SizzleTuple) that).name.equals(this.name);
+		return true;
 	}
 
 	/** {@inheritDoc} */
 	@Override
 	public boolean accepts(final SizzleType that) {
 		return this.assigns(that);
+	}
+
+	/**
+	 * Return the type of the member identified by a given index.
+	 * 
+	 * @param index
+	 *            An int containing the index of the member
+	 * 
+	 * @return A {@link SizzleType} representing the type of the member
+	 * 
+	 */
+	public SizzleType getMember(final int index) {
+		return this.members.get(index);
 	}
 
 	/**
@@ -61,68 +79,21 @@ public class SizzleTuple extends SizzleType {
 	 * 
 	 */
 	public SizzleType getMember(final String member) {
-		return this.members.get(member);
+		return this.members.get(this.names.get(member));
 	}
 
-	/**
-	 * Get the name of this type.
-	 * 
-	 * @return A {@link String} containing the name of the type
-	 */
-	public String getName() {
-		return this.name;
-	}
-
-	/**
-	 * Set the name of this type.
-	 * 
-	 * @param name
-	 *            A {@link String} containing the name of the type
-	 */
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	/**
-	 * Get the members mapping for this tuple.
-	 * 
-	 * @return A {@link Map} or {@link SizzleType} containing the members
-	 *         mapping for this tuple
-	 * 
-	 */
-	public Map<String, SizzleType> getMembers() {
+	public List<SizzleType> getTypes() {
 		return this.members;
 	}
 
-	/**
-	 * Set the members mapping for this tuple.
-	 * 
-	 * @param members
-	 *            A {@link Map} or {@link SizzleType} containing the members
-	 *            mapping for this tuple
-	 * 
-	 */
-	public void setMembers(final Map<String, SizzleType> members) {
-		this.members = members;
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	public String toString() {
-		return "tuple " + this.name + this.members.toString();
-	}
-
-	/** {@inheritDoc} */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = 1;
+		int result = super.hashCode();
 		result = prime * result + (this.members == null ? 0 : this.members.hashCode());
-		result = prime * result + (this.name == null ? 0 : this.name.hashCode());
 		return result;
 	}
 
-	/** {@inheritDoc} */
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj)
@@ -137,11 +108,12 @@ public class SizzleTuple extends SizzleType {
 				return false;
 		} else if (!this.members.equals(other.members))
 			return false;
-		if (this.name == null) {
-			if (other.name != null)
-				return false;
-		} else if (!this.name.equals(other.name))
-			return false;
 		return true;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public String toString() {
+		return "tuple " + this.members.toString();
 	}
 }

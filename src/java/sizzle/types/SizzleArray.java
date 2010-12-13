@@ -13,17 +13,19 @@ public class SizzleArray extends SizzleType {
 
 	/**
 	 * Construct a SizzleArray.
-	 * 
-	 * @param type
-	 *            A {@link SizzleScalar} representing the type of the elements
-	 *            in this array
 	 */
-	public SizzleArray(final SizzleScalar type) {
-		this.type = type;
+	public SizzleArray() {
 	}
 
-	public SizzleArray(final SizzleAny sizzleAny) {
-		this.type = sizzleAny;
+	/**
+	 * Construct a SizzleArray.
+	 * 
+	 * @param sizzleType
+	 *            A {@link SizzleType} representing the type of the elements in
+	 *            this array
+	 */
+	public SizzleArray(final SizzleType sizzleType) {
+		this.type = sizzleType;
 	}
 
 	/** {@inheritDoc} */
@@ -140,6 +142,9 @@ public class SizzleArray extends SizzleType {
 	/** {@inheritDoc} */
 	@Override
 	public String toString() {
-		return "array of " + this.type.toString();
+		if (this.type == null)
+			return "array of none";
+		else
+			return "array of " + this.type.toString();
 	}
 }

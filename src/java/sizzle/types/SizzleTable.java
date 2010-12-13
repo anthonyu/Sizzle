@@ -9,8 +9,7 @@ import java.util.List;
  * 
  */
 public class SizzleTable extends SizzleType {
-	private List<SizzleScalar> types;
-	private List<String> subscripts;
+	private SizzleType type;
 	private List<SizzleScalar> indexTypes;
 	private SizzleScalar weightType;
 
@@ -18,34 +17,18 @@ public class SizzleTable extends SizzleType {
 	 * Construct a SizzleTable.
 	 * 
 	 * @param types
-	 *            A {@link List} of {@link SizzleScalar} representing the types
-	 *            of this SizzleTable
+	 *            A {@link List} of {@link SizzleType} representing the types of
+	 *            this SizzleTable
 	 */
-	public SizzleTable(final List<SizzleScalar> types) {
-		this(types, null, null, null);
+	public SizzleTable(final SizzleType type) {
+		this(type, null, null);
 	}
 
 	/**
 	 * Construct a SizzleTable.
 	 * 
-	 * @param types
-	 *            A {@link List} of {@link SizzleScalar} representing the types
-	 *            of this SizzleTable
-	 * 
-	 * @param subscripts
-	 *            A {@link List} of {@link String} containing the names of the
-	 *            subscripts of this SizzleTable
-	 */
-	public SizzleTable(final List<SizzleScalar> types, final List<String> subscripts) {
-		this(types, subscripts, null, null);
-	}
-
-	/**
-	 * Construct a SizzleTable.
-	 * 
-	 * @param types
-	 *            A {@link List} of {@link SizzleScalar} representing the types
-	 *            of this SizzleTable
+	 * @param type
+	 *            A {@link SizzleType} representing the type of this SizzleTable
 	 * 
 	 * @param subscripts
 	 *            A {@link List} of {@link String} containing the names of the
@@ -55,20 +38,15 @@ public class SizzleTable extends SizzleType {
 	 *            A {@link List} of {@link SizzleScalar} representing the index
 	 *            types of this SizzleTable
 	 */
-	public SizzleTable(final List<SizzleScalar> types, final List<String> subscripts, final List<SizzleScalar> indexTypes) {
-		this(types, subscripts, indexTypes, null);
+	public SizzleTable(final SizzleType type, final List<SizzleScalar> indexTypes) {
+		this(type, indexTypes, null);
 	}
 
 	/**
 	 * Construct a SizzleTable.
 	 * 
-	 * @param types
-	 *            A {@link List} of {@link SizzleScalar} representing the types
-	 *            of this SizzleTable
-	 * 
-	 * @param subscripts
-	 *            A {@link List} of {@link String} containing the names of the
-	 *            subscripts of this SizzleTable
+	 * @param type
+	 *            A {@link SizzleType} representing the type of this SizzleTable
 	 * 
 	 * @param indexTypes
 	 *            A {@link List} of {@link SizzleScalar} representing the index
@@ -79,21 +57,10 @@ public class SizzleTable extends SizzleType {
 	 *            SizzleTable
 	 * 
 	 */
-	public SizzleTable(final List<SizzleScalar> types, final List<String> subscripts, final List<SizzleScalar> indexTypes, final SizzleScalar weightType) {
-		this.types = types;
-		this.subscripts = subscripts;
+	public SizzleTable(final SizzleType type, final List<SizzleScalar> indexTypes, final SizzleScalar weightType) {
+		this.type = type;
 		this.indexTypes = indexTypes;
 		this.weightType = weightType;
-	}
-
-	/**
-	 * Return the number of values each emit to this table will require.
-	 * 
-	 * @return An int containing the number of values each emit to this table
-	 *         will require
-	 */
-	public int countTypes() {
-		return this.types.size();
 	}
 
 	/**
@@ -109,31 +76,14 @@ public class SizzleTable extends SizzleType {
 	}
 
 	/**
-	 * Get the type of value to be emitted at that position.
+	 * Get the type of value to be emitted to this table.
 	 * 
-	 * @param position
-	 *            An int representing the position
-	 * 
-	 * @return A {@link SizzleScalar} representing the type of the value to be
-	 *         emitted at that position
+	 * @return A {@link SizzleType} representing the type of the value to be
+	 *         emitted to this table
 	 * 
 	 */
-	public SizzleScalar getType(final int position) {
-		return this.types.get(position);
-	}
-
-	/**
-	 * Get the name of the subscript at that position.
-	 * 
-	 * @param position
-	 *            An int representing the position
-	 * 
-	 * @return A {@link String} containing the name of the subscript at that
-	 *         position
-	 * 
-	 */
-	public String getSubscript(final int position) {
-		return this.subscripts.get(position);
+	public SizzleType getType() {
+		return this.type;
 	}
 
 	/**
@@ -159,14 +109,13 @@ public class SizzleTable extends SizzleType {
 	 * 
 	 * @return True if this table will accept them, false otherwise
 	 */
-	public boolean accepts(final List<SizzleType> types) {
-		// for each of the types
-		for (int i = 0; i < this.types.size(); i++)
-			// check if the types are equivalent
-			if (!this.types.get(i).assigns(types.get(i)))
-				return false;
+	@Override
+	public boolean accepts(final SizzleType type) {
+		// check if the types are equivalent
+		if (!this.type.assigns(type))
+			return false;
 
-		// they all were
+		// they were
 		return true;
 	}
 
@@ -188,49 +137,15 @@ public class SizzleTable extends SizzleType {
 	}
 
 	/**
-	 * Get the types of the values to be emitted to this table.
-	 * 
-	 * @return A {@link List} of {@link SizzleScalar} representing the types of
-	 *         the values to be emitted to this table
-	 * 
-	 */
-	public List<SizzleScalar> getTypes() {
-		return this.types;
-	}
-
-	/**
-	 * Set the types of the values to be emitted to this table.
+	 * Set the type of the values to be emitted to this table.
 	 * 
 	 * @param types
-	 *            A {@link List} of {@link SizzleScalar} representing the types
-	 *            of the values to be emitted to this table
+	 *            A {@link SizzleType} representing the type of the values to be
+	 *            emitted to this table
 	 * 
 	 */
-	public void setTypes(final List<SizzleScalar> types) {
-		this.types = types;
-	}
-
-	/**
-	 * Get the names of the subscripts to this table.
-	 * 
-	 * @return A {@link List} of {@link String} containing the names of the
-	 *         subscripts to this table
-	 * 
-	 */
-	public List<String> getSubscripts() {
-		return this.subscripts;
-	}
-
-	/**
-	 * Set the names of the subscripts to this table.
-	 * 
-	 * @param subscripts
-	 *            A {@link List} of {@link String} containing the names of the
-	 *            subscripts to this table
-	 * 
-	 */
-	public void setSubscripts(final List<String> subscripts) {
-		this.subscripts = subscripts;
+	public void setType(final SizzleType type) {
+		this.type = type;
 	}
 
 	/**
@@ -285,8 +200,7 @@ public class SizzleTable extends SizzleType {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + (this.indexTypes == null ? 0 : this.indexTypes.hashCode());
-		result = prime * result + (this.subscripts == null ? 0 : this.subscripts.hashCode());
-		result = prime * result + (this.types == null ? 0 : this.types.hashCode());
+		result = prime * result + (this.type == null ? 0 : this.type.hashCode());
 		result = prime * result + (this.weightType == null ? 0 : this.weightType.hashCode());
 		return result;
 	}
@@ -298,7 +212,7 @@ public class SizzleTable extends SizzleType {
 			return true;
 		if (!super.equals(obj))
 			return false;
-		if (!(obj instanceof SizzleTable))
+		if (this.getClass() != obj.getClass())
 			return false;
 		final SizzleTable other = (SizzleTable) obj;
 		if (this.indexTypes == null) {
@@ -306,15 +220,10 @@ public class SizzleTable extends SizzleType {
 				return false;
 		} else if (!this.indexTypes.equals(other.indexTypes))
 			return false;
-		if (this.subscripts == null) {
-			if (other.subscripts != null)
+		if (this.type == null) {
+			if (other.type != null)
 				return false;
-		} else if (!this.subscripts.equals(other.subscripts))
-			return false;
-		if (this.types == null) {
-			if (other.types != null)
-				return false;
-		} else if (!this.types.equals(other.types))
+		} else if (!this.type.equals(other.type))
 			return false;
 		if (this.weightType == null) {
 			if (other.weightType != null)
@@ -327,6 +236,6 @@ public class SizzleTable extends SizzleType {
 	/** {@inheritDoc} */
 	@Override
 	public String toString() {
-		return this.getTypes() + "/" + this.subscripts + "/" + this.indexTypes + "/" + this.weightType;
+		return this.getType() + "/" + this.indexTypes + "/" + this.weightType;
 	}
 }

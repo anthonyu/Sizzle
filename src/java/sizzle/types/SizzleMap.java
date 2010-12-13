@@ -7,23 +7,30 @@ package sizzle.types;
  * 
  */
 public class SizzleMap extends SizzleType {
-	private final SizzleScalar type;
-	private final SizzleScalar indexType;
+	private final SizzleType type;
+	private final SizzleType indexType;
 
 	/**
-	 * Construct a SizzleMap
+	 * Construct a SizzleMap.
+	 */
+	public SizzleMap() {
+		this(null, null);
+	}
+
+	/**
+	 * Construct a SizzleMap.
 	 * 
-	 * @param type
-	 *            A {@link SizzleScalar} representing the type of the values in
+	 * @param sizzleType
+	 *            A {@link SizzleType} representing the type of the values in
 	 *            this map
 	 * 
-	 * @param indexType
-	 *            A {@link SizzleScalar} representing the type of the indices in
+	 * @param sizzleType2
+	 *            A {@link SizzleType} representing the type of the indices in
 	 *            this map
 	 */
-	public SizzleMap(final SizzleScalar type, final SizzleScalar indexType) {
-		this.type = type;
-		this.indexType = indexType;
+	public SizzleMap(final SizzleType sizzleType, final SizzleType sizzleType2) {
+		this.type = sizzleType;
+		this.indexType = sizzleType2;
 	}
 
 	/** {@inheritDoc} */
@@ -85,17 +92,17 @@ public class SizzleMap extends SizzleType {
 	/**
 	 * Get the type of the indices of this map.
 	 * 
-	 * @return A {@link SizzleScalar} representing the type of the indices of
-	 *         this map
+	 * @return A {@link SizzleType} representing the type of the indices of this
+	 *         map
 	 */
-	public SizzleScalar getIndexType() {
+	public SizzleType getIndexType() {
 		return this.indexType;
 	}
 
 	/** {@inheritDoc} */
 	@Override
 	public String toString() {
-		return this.type + "{" + this.indexType + "}";
+		return "map[" + this.indexType + "] of " + this.type;
 	}
 
 	/** {@inheritDoc} */
