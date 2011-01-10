@@ -41,7 +41,7 @@ class FloatMeanSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public FloatMeanSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.FloatMeanAggregator());
+		this.tables.put("test", new Table(new sizzle.aggregators.FloatMeanAggregator()));
 	}
 }
 
@@ -49,6 +49,6 @@ class FloatMeanSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public FloatMeanSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.FloatMeanAggregator());
+		this.tables.put("test", new Table(new sizzle.aggregators.FloatMeanAggregator()));
 	}
 }

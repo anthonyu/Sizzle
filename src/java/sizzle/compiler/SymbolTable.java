@@ -19,8 +19,8 @@ import org.scannotation.ClasspathUrlFinder;
 
 import sizzle.aggregators.AggregatorSpec;
 import sizzle.aggregators.IntSumAggregator;
-import sizzle.aggregators.Table;
 import sizzle.functions.FunctionSpec;
+import sizzle.parser.syntaxtree.Operand;
 import sizzle.types.SizzleAny;
 import sizzle.types.SizzleArray;
 import sizzle.types.SizzleBool;
@@ -55,9 +55,8 @@ public class SymbolTable {
 	private Map<String, SizzleType> globals;
 	private Map<String, SizzleType> locals;
 
-	private SizzleType initializerType;
-	private String mapName;
-	private String staticInitializer;
+	private String id;
+	private Operand operand;
 
 	public SymbolTable() throws IOException {
 		this(new ArrayList<URL>(), new SizzleString());
@@ -145,8 +144,8 @@ public class SymbolTable {
 		this.setFunction("regex", new SizzleFunction(new SizzleString(), new SizzleType[] { new SizzleName(new SizzleScalar()) },
 				"sizzle.functions.SizzleSpecialIntrinsics.regex(\"${0}\")"));
 		// these fingerprints are identity functions
-		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }, "${0}"));
-		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleTime() }, "${0}"));
+		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }));
+		this.setFunction("fingerprintof", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleTime() }));
 
 		/* expose all the casting constructors to Sawzall */
 
@@ -159,13 +158,14 @@ public class SymbolTable {
 		// float to int
 		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleFloat() }, "(long)${0}"));
 		// time to int
-		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleTime() }, "${0}"));
+		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleTime() }));
 		// fingerprint to int
-		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleFingerprint() }, "${0}"));
+		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleFingerprint() }));
 		// string to int
 		this.setFunction("int", new SizzleFunction("java.lang.Long.decode", new SizzleInt(), new SizzleScalar[] { new SizzleString() }));
 		// string to int with param base
-		this.setFunction("int", new SizzleFunction("java.lang.Long.parseLong", new SizzleInt(), new SizzleScalar[] { new SizzleString(), new SizzleInt() }));
+		this.setFunction("int", new SizzleFunction(new SizzleInt(), new SizzleScalar[] { new SizzleString(), new SizzleInt() },
+				"java.lang.Long.parseLong(${0}, (int)${1})"));
 		// bytes to int with param encoding format
 		this.setFunction("int", new SizzleFunction("sizzle.functions.SizzleCasts.bytesToLong", new SizzleInt(), new SizzleScalar[] { new SizzleBytes(),
 				new SizzleString() }));
@@ -176,7 +176,7 @@ public class SymbolTable {
 		this.setFunction("float", new SizzleFunction("java.lang.Double.parseDouble", new SizzleFloat(), new SizzleScalar[] { new SizzleString() }));
 
 		// int to time
-		this.setFunction("time", new SizzleFunction(new SizzleTime(), new SizzleScalar[] { new SizzleInt() }, "${0}"));
+		this.setFunction("time", new SizzleFunction(new SizzleTime(), new SizzleScalar[] { new SizzleInt() }));
 		// string to time
 		this.setFunction("time", new SizzleFunction("sizzle.functions.SizzleCasts.stringToTime", new SizzleTime(), new SizzleScalar[] { new SizzleString() }));
 		// string to time
@@ -184,9 +184,9 @@ public class SymbolTable {
 				new SizzleString() }));
 
 		// int to fingerprint
-		this.setFunction("fingerprint", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }, "${0}"));
+		this.setFunction("fingerprint", new SizzleFunction(new SizzleFingerprint(), new SizzleScalar[] { new SizzleInt() }));
 		// string to fingerprint
-		this.setFunction("fingerprint", new SizzleFunction("java.lang.Long.parseLong", new SizzleInt(), new SizzleScalar[] { new SizzleString(), }));
+		this.setFunction("fingerprint", new SizzleFunction("java.lang.Long.parseLong", new SizzleInt(), new SizzleScalar[] { new SizzleString() }));
 		// string to fingerprint with param base
 		this.setFunction("fingerprint", new SizzleFunction("java.lang.Long.parseLong", new SizzleInt(), new SizzleScalar[] { new SizzleString(),
 				new SizzleInt() }));
@@ -273,11 +273,12 @@ public class SymbolTable {
 				this.setFunction(s, new SizzleFunction("java.lang.Math." + s, new SizzleFloat(), new SizzleScalar[] { new SizzleFloat() }));
 
 			// and binaries
-			for (final String s : Arrays.asList("hypot"))
-				this.setFunction(s, new SizzleFunction("java.lang.Math." + s, new SizzleFloat(), new SizzleScalar[] { new SizzleFloat(), new SizzleFloat() }));
+			this.setFunction("hypot",
+					new SizzleFunction("java.lang.Math.hypot", new SizzleFloat(), new SizzleScalar[] { new SizzleFloat(), new SizzleFloat() }));
 		}
 
 		// add in the default tables
+		// FIXME: support format strings and files
 		this.set("stdout", new SizzleTable(new SizzleString()));
 		this.set("stderr", new SizzleTable(new SizzleString()));
 		this.set("output", new SizzleTable(new SizzleBytes()));
@@ -342,8 +343,6 @@ public class SymbolTable {
 		if (id.startsWith("array of "))
 			return new SizzleArray(this.getType(id.substring("array of ".length())));
 
-		System.err.println(this.idmap);
-
 		throw new TypeException("no such type " + id);
 	}
 
@@ -372,28 +371,25 @@ public class SymbolTable {
 		}
 	}
 
-	public Table getTable(final String name, final SizzleType sizzleType) {
-		if (sizzleType instanceof SizzleTuple) {
-			final List<Class<?>> aggregators = new ArrayList<Class<?>>();
+	public Class<?> getAggregator(final String name, final SizzleScalar type) {
+		if (this.aggregators.containsKey(name + ":" + type))
+			return this.aggregators.get(name + ":" + type);
+		else if (this.aggregators.containsKey(name))
+			return this.aggregators.get(name);
+		else
+			throw new TypeException("no such aggregator " + name + " of " + type);
+	}
 
-			for (final SizzleType subType : ((SizzleTuple) sizzleType).getTypes()) {
-				if (this.aggregators.containsKey(name + ":" + subType)) {
-					aggregators.add(this.aggregators.get(name + ":" + subType));
-				} else if (this.aggregators.containsKey(name)) {
-					aggregators.add(this.aggregators.get(name));
-				} else {
-					throw new TypeException("no such aggregator " + name + " of " + subType);
-				}
-			}
+	public List<Class<?>> getAggregators(final String name, final SizzleType type) {
+		final List<Class<?>> aggregators = new ArrayList<Class<?>>();
 
-			return new Table(aggregators);
-		} else if (this.aggregators.containsKey(name + ":" + sizzleType)) {
-			return new Table(this.aggregators.get(name + ":" + sizzleType));
-		} else if (this.aggregators.containsKey(name)) {
-			return new Table(this.aggregators.get(name));
-		} else {
-			throw new TypeException("no such aggregator " + name + " of " + sizzleType);
-		}
+		if (type instanceof SizzleTuple)
+			for (final SizzleType subType : ((SizzleTuple) type).getTypes())
+				aggregators.add(this.getAggregator(name, (SizzleScalar) subType));
+		else
+			aggregators.add(this.getAggregator(name, (SizzleScalar) type));
+
+		return aggregators;
 	}
 
 	private void importFunction(final Method m) {
@@ -421,7 +417,7 @@ public class SymbolTable {
 				throw new TypeException("unknown dependency in " + dep);
 
 		this.setFunction(annotation.name(),
-				new SizzleFunction(m.getDeclaringClass().getCanonicalName() + "." + m.getName(), this.getType(annotation.returnType()), formalParameterTypes));
+				new SizzleFunction(m.getDeclaringClass().getCanonicalName() + '.' + m.getName(), this.getType(annotation.returnType()), formalParameterTypes));
 	}
 
 	private void importFunctions(final Class<?> c) {
@@ -536,28 +532,20 @@ public class SymbolTable {
 		return this.getFunction(to.toString(), new SizzleType[] { from });
 	}
 
-	public void setInitializerType(final SizzleType initializerType) {
-		this.initializerType = initializerType;
+	public void setId(final String id) {
+		this.id = id;
 	}
 
-	public SizzleType getInitializerType() {
-		return this.initializerType;
+	public String getId() {
+		return this.id;
 	}
 
-	public void setMapName(final String mapName) {
-		this.mapName = mapName;
+	public void setOperand(final Operand operand) {
+		this.operand = operand;
 	}
 
-	public String getMapName() {
-		return this.mapName;
-	}
-
-	public String getStaticInitializer() {
-		return this.staticInitializer;
-	}
-
-	public void setStaticInitializer(final String staticInitializer) {
-		this.staticInitializer = staticInitializer;
+	public Operand getOperand() {
+		return this.operand;
 	}
 
 	@Override
@@ -596,10 +584,9 @@ public class SymbolTable {
 		final StringBuilder decamelized = new StringBuilder();
 
 		for (final char c : string.toCharArray())
-			if (Character.isUpperCase(c)) {
-				decamelized.append('_');
-				decamelized.append(Character.toLowerCase(c));
-			} else
+			if (Character.isUpperCase(c))
+				decamelized.append(Character.toString('_') + Character.toLowerCase(c));
+			else
 				decamelized.append(c);
 
 		return decamelized.toString();

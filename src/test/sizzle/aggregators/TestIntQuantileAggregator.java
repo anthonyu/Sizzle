@@ -90,7 +90,7 @@ class IntQuartileSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public IntQuartileSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.IntQuantileAggregator(5));
+		this.tables.put("test", new Table(new sizzle.aggregators.IntQuantileAggregator(5)));
 	}
 }
 
@@ -98,6 +98,6 @@ class IntQuartileSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public IntQuartileSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.IntQuantileAggregator(5));
+		this.tables.put("test", new Table(new sizzle.aggregators.IntQuantileAggregator(5)));
 	}
 }

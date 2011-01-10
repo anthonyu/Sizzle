@@ -90,7 +90,7 @@ class FloatQuartileSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public FloatQuartileSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.FloatQuantileAggregator(5));
+		this.tables.put("test", new Table(new sizzle.aggregators.FloatQuantileAggregator(5)));
 	}
 }
 
@@ -98,6 +98,6 @@ class FloatQuartileSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public FloatQuartileSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.FloatQuantileAggregator(5));
+		this.tables.put("test", new Table(new sizzle.aggregators.FloatQuantileAggregator(5)));
 	}
 }

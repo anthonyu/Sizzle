@@ -53,7 +53,7 @@ class TextSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public TextSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.TextAggregator());
+		this.tables.put("test", new Table(new sizzle.aggregators.TextAggregator()));
 	}
 }
 
@@ -61,6 +61,6 @@ class TextSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public TextSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.TextAggregator());
+		this.tables.put("test", new Table(new sizzle.aggregators.TextAggregator()));
 	}
 }

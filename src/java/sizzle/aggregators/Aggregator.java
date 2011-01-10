@@ -159,4 +159,8 @@ public abstract class Aggregator {
 	public EmitKey getKey() {
 		return this.key;
 	}
+
+	public EmitValue getResult() {
+		throw new RuntimeException("unimplemented");
+	}
 }

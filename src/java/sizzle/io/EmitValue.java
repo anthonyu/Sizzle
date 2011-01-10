@@ -3,6 +3,7 @@ package sizzle.io;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -15,14 +16,57 @@ import org.apache.hadoop.io.Writable;
  * 
  */
 public class EmitValue implements Writable {
-	String data;
-	String metadata;
+	private String[] data;
+	private String metadata;
 
 	/**
 	 * Construct an EmitValue.
 	 */
 	public EmitValue() {
 		// default constructor for Writable
+	}
+
+	/**
+	 * Construct an EmitValue.
+	 * 
+	 * @param data
+	 *            An array of {@link String} containing the data to be emitted
+	 * @param metadata
+	 *            A {@link String} containing the metadata to be emitted
+	 */
+	public EmitValue(final String[] data, final String metadata) {
+		this.data = data;
+		this.metadata = metadata;
+	}
+
+	/**
+	 * Construct an EmitValue.
+	 * 
+	 * @param data
+	 *            An array of {@link String} containing the data to be emitted
+	 * @param metadata
+	 *            A {@link String} containing the metadata to be emitted
+	 */
+	public EmitValue(final Object[] data, final String metadata) {
+		final String[] strings = new String[data.length];
+
+		for (int i = 0; i < data.length; i++)
+			strings[i] = data[i].toString();
+
+		this.data = strings;
+		this.metadata = metadata;
+	}
+
+	/**
+	 * Construct an EmitValue.
+	 * 
+	 * @param data
+	 *            An array of {@link String} containing the data to be emitted
+	 * @param metadata
+	 *            A {@link String} containing the metadata to be emitted
+	 */
+	public EmitValue(final Object[] data) {
+		this(data, null);
 	}
 
 	/**
@@ -44,8 +88,7 @@ public class EmitValue implements Writable {
 	 *            A {@link String} containing the metadata to be emitted
 	 */
 	public EmitValue(final String data, final String metadata) {
-		this.data = data;
-		this.metadata = metadata;
+		this(new String[] { data }, metadata);
 	}
 
 	/**
@@ -91,8 +134,7 @@ public class EmitValue implements Writable {
 	 *            A {@link String} containing the metadata to be emitted
 	 */
 	public EmitValue(final long data, final String metadata) {
-		this.data = Long.toString(data);
-		this.metadata = metadata;
+		this(Long.toString(data), metadata);
 	}
 
 	/**
@@ -138,8 +180,7 @@ public class EmitValue implements Writable {
 	 *            A {@link String} containing the metadata to be emitted
 	 */
 	public EmitValue(final double data, final String metadata) {
-		this.data = Double.toString(data);
-		this.metadata = metadata;
+		this(Double.toString(data), metadata);
 	}
 
 	/**
@@ -169,7 +210,12 @@ public class EmitValue implements Writable {
 	/** {@inheritDoc} */
 	@Override
 	public void readFields(final DataInput in) throws IOException {
-		this.data = Text.readString(in);
+		final int count = in.readInt();
+
+		this.data = new String[count];
+		for (int i = 0; i < count; i++)
+			this.data[i] = Text.readString(in);
+
 		final String metadata = Text.readString(in);
 		if (metadata.equals(""))
 			this.metadata = null;
@@ -180,7 +226,11 @@ public class EmitValue implements Writable {
 	/** {@inheritDoc} */
 	@Override
 	public void write(final DataOutput out) throws IOException {
-		Text.writeString(out, this.data);
+		out.writeInt(this.data.length);
+
+		for (final String d : this.data)
+			Text.writeString(out, d);
+
 		if (this.metadata == null)
 			Text.writeString(out, "");
 		else
@@ -190,7 +240,7 @@ public class EmitValue implements Writable {
 	/**
 	 * @return the data
 	 */
-	public String getData() {
+	public String[] getData() {
 		return this.data;
 	}
 
@@ -198,7 +248,7 @@ public class EmitValue implements Writable {
 	 * @param data
 	 *            the data to set
 	 */
-	public void setData(final String data) {
+	public void setData(final String[] data) {
 		this.data = data;
 	}
 
@@ -217,35 +267,30 @@ public class EmitValue implements Writable {
 		this.metadata = metadata;
 	}
 
-	/** {@inheritDoc} */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + Arrays.hashCode(this.data);
 		result = prime * result + (this.metadata == null ? 0 : this.metadata.hashCode());
-		result = prime * result + (this.data == null ? 0 : this.data.hashCode());
 		return result;
 	}
 
-	/** {@inheritDoc} */
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (!(obj instanceof EmitValue))
+		if (this.getClass() != obj.getClass())
 			return false;
 		final EmitValue other = (EmitValue) obj;
+		if (!Arrays.equals(this.data, other.data))
+			return false;
 		if (this.metadata == null) {
 			if (other.metadata != null)
 				return false;
 		} else if (!this.metadata.equals(other.metadata))
-			return false;
-		if (this.data == null) {
-			if (other.data != null)
-				return false;
-		} else if (!this.data.equals(other.data))
 			return false;
 		return true;
 	}
@@ -253,6 +298,6 @@ public class EmitValue implements Writable {
 	/** {@inheritDoc} */
 	@Override
 	public String toString() {
-		return this.data + ":" + this.metadata;
+		return Arrays.toString(this.data) + ":" + this.metadata;
 	}
 }

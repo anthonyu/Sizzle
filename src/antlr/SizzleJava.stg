@@ -1,0 +1,46 @@
+group SizzleJava;
+
+identifierMap ::= [
+		"true" : "true",
+		"false" : "false",
+		"PI" : "Math.PI",
+		"Inf" : "Double.POSITIVE_INFINITY",
+		"inf" : "Double.POSITIVE_INFINITY",
+		"NaN" : "Double.NaN",
+		"nan" : "Double.NaN",
+		"SECOND" : "1000 * 1000",
+		"SEC" : "1000 * 1000",
+		"MINUTE" : "(60 * 1000 * 1000)",
+		"MIN" : "(60 * 1000 * 1000)",
+		"HOUR" : "(60 * 60 * 1000 * 1000)",
+		"HR" : "(60 * 60 * 1000 * 1000)",
+		"input" : "value.toString()"
+]
+		
+VarDecl(type, id, initializer) ::= "<type> ___<id><if(initializer)> = <initializer><endif>;"
+ArrayType(type) ::= "new <type>[];"
+MapType(key, value) ::= "new java.util.HashMap();"
+ExprList(expressions) ::= "<first(expressions)><rest(expressions):{, <it>}>"
+Block(statements) ::= "{ <statements:{<it>}> }"
+ExprStatement(expression, operator) ::= "<expression><operator>"
+ForStatement(declaration, expression, exprstmt, statement) ::= "for (<declaration> <expression>; <exprstmt>) <statement>"
+IfStatement(expression, statement, elseStatement) ::= <<
+if (<expression>)
+	<statement>
+<if(elseStatement)>
+else
+	<elseStatement>
+<endif>
+>>
+WhenStatement(vars, expression, statement) ::= <<
+<vars:{for (int <it> = 0; <it> < 0; <it>++}>
+	if (<expression>) <statement>
+>>
+Expression(lhs, operators, operands) ::= "<lhs><operators,operands:{operator,operand|<operator><operand>}>"
+Index(map, operand, index, slice) ::= "<if(map)><operand>.get(<index>)<elseif(slice)>java.util.Arrays.copyOfRange(<operand>, <index>, <slice>)<else><operand>[(int)<index>]<endif>"
+Call(call, operand, parameters) ::= "<if(call)><call><else><operand>(<parameters>)<endif>"
+Composite(type, pairlist, exprlist) ::= "<if(exprlist)>new <type> { <exprlist> }<else>new java.util.HashMap()<endif>"
+PairList(pairs) ::= "<pairs:{<it>;<\n>}>"
+Pair(map, key, value) ::= "<map>.put(<key>, <value>)"
+Identifier(id) ::= "<if(identifierMap.(id))><identifierMap.(id)><else>___<id><endif>"
+

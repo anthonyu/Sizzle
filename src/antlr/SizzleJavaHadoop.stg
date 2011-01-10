@@ -1,0 +1,93 @@
+group SizzleJavaHadoop : SizzleJava;
+
+Program(name, inputFormatClass, keyClass, valueClass, staticDeclarations, staticStatements, statements, tables) ::= <<
+package sizzle;
+
+public class <name> extends sizzle.runtime.SizzleRunner {
+	/** {@inheritDoc} */
+	@Override
+	public org.apache.hadoop.mapreduce.Job job(org.apache.hadoop.fs.Path[] ins, org.apache.hadoop.fs.Path out, boolean robust) throws java.io.IOException {
+		org.apache.hadoop.mapreduce.Job job = super.job(ins, out, robust);
+		job.setInputFormatClass(<inputFormatClass>.class);
+		job.setJobName("<name>: " + out);
+		
+		job.setMapperClass(<name>SizzleMapper.class);
+		job.setCombinerClass(<name>SizzleCombiner.class);
+		job.setReducerClass(<name>SizzleReducer.class);
+		
+		return job;
+	}
+	
+	public static void main(String[] args) throws java.io.IOException, InterruptedException, ClassNotFoundException {
+		<name> runner = new <name>();
+		
+		runner.job(new org.apache.hadoop.fs.Path[] { new org.apache.hadoop.fs.Path(args[0]) }, new org.apache.hadoop.fs.Path(args[1]), args.length > 2).submit();
+	}
+	
+	static class <name>SizzleMapper extends sizzle.runtime.SizzleMapper {
+		<staticDeclarations>
+		
+		<if(staticStatements)>
+		{
+			<staticStatements>
+		}
+		
+		<endif>
+		/** {@inheritDoc} */
+		@Override
+		protected void map(<keyClass> key, <valueClass> value, org.apache.hadoop.mapreduce.Mapper\<<keyClass>, <valueClass>, sizzle.io.EmitKey, sizzle.io.EmitValue\>.Context context) throws java.io.IOException, InterruptedException {
+			try {
+				<statements:{ <it><\n> }>
+			} catch (java.io.IOException e) {
+				throw e;
+			} catch (InterruptedException e) {
+				throw e;
+			} catch (RuntimeException e) {
+				if (this.robust)
+					LOG.error(e.getClass().getName() + " caught", e);
+				else
+					throw e;
+			} catch (Exception e) {
+				if (this.robust)
+					LOG.error(e.getClass().getName() + " caught", e);
+				else
+					throw new RuntimeException(e.getClass().getName() + " caught", e);
+			}
+		}
+	}
+	
+	static class <name>SizzleCombiner extends sizzle.runtime.SizzleCombiner {
+		public <name>SizzleCombiner() {
+			super();
+			
+			<tables:{ <it><\n> }>
+		}
+	}
+	
+	static class <name>SizzleReducer extends sizzle.runtime.SizzleReducer {
+		public <name>SizzleReducer() {
+			super();
+
+
+			<tables:{ <it><\n> }>
+		}
+	}
+	
+	@Override
+	public sizzle.runtime.SizzleMapper getMapper() {
+		return new <name>SizzleMapper();
+	}
+	
+	@Override
+	public sizzle.runtime.SizzleCombiner getCombiner() {
+		return new <name>SizzleCombiner();
+	}
+	
+	@Override
+	public sizzle.runtime.SizzleReducer getReducer() {
+		return new <name>SizzleReducer();
+	}
+}
+>>
+
+EmitStatement(indices, id, expression, weight) ::= "context.write(new sizzle.io.EmitKey(<if(indices)><indices:{\"[\" + <it> + \"]\"}>, <endif><id>), new sizzle.io.EmitValue(<expression><if(weight)>, <weight><endif>));"

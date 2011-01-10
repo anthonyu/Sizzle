@@ -1,29 +1,26 @@
 package sizzle.compiler;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
-
 import javaxtools.compiler.CharSequenceCompiler;
 import javaxtools.compiler.CharSequenceCompilerException;
 
+import org.antlr.stringtemplate.CommonGroupLoader;
+import org.antlr.stringtemplate.PathGroupLoader;
+import org.antlr.stringtemplate.StringTemplateGroup;
+import org.antlr.stringtemplate.StringTemplateGroupLoader;
+import org.antlr.tool.ErrorManager;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mrunit.mapreduce.MapDriver;
 import org.apache.hadoop.mrunit.mapreduce.MapReduceDriver;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -33,7 +30,6 @@ import sizzle.io.EmitKey;
 import sizzle.io.EmitValue;
 import sizzle.parser.ParseException;
 import sizzle.parser.SizzleParser;
-import sizzle.runtime.SizzleMapper;
 import sizzle.runtime.SizzleRunner;
 import sizzle.types.SizzleBytes;
 
@@ -41,10 +37,11 @@ import sizzle.types.SizzleBytes;
 public class TestCodeGeneratingVisitor {
 	private static TypeCheckingVisitor typeChecker;
 	private static CharSequenceCompiler<SizzleRunner> compiler;
+	private static StringTemplateGroup stg;
 
 	@BeforeClass
-	public static void init() {
-		TestCodeGeneratingVisitor.typeChecker = new TypeCheckingVisitor(new NameFindingVisitor());
+	public static void init() throws IOException {
+		TestCodeGeneratingVisitor.typeChecker = new TypeCheckingVisitor();
 		// this is a JavaCC wtf, do not remove
 		try {
 			new SizzleParser(new StringReader(""));
@@ -53,14 +50,54 @@ public class TestCodeGeneratingVisitor {
 		}
 
 		TestCodeGeneratingVisitor.compiler = new CharSequenceCompiler<SizzleRunner>(null, null);
+
+		final StringTemplateGroupLoader loader = new PathGroupLoader("/home/anthonyu/Projects/Sizzle/src/antlr/", ErrorManager.getStringTemplateErrorListener());
+		StringTemplateGroup.registerGroupLoader(loader);
+
+		TestCodeGeneratingVisitor.stg = StringTemplateGroup.loadGroup("SizzleJavaHadoop");
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorSimple() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException,
-			CharSequenceCompilerException, InstantiationException, IllegalAccessException {
+	public void testCodeGeneratingVisitorHello() throws IOException, ParseException, ClassCastException, InstantiationException, IllegalAccessException,
+			CharSequenceCompilerException {
+		final String source = "emit stdout <- \"Hello, World!\";\n";
+
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("Hello", TestCodeGeneratingVisitor.stg);
+		SymbolTable st;
+		try {
+			st = new SymbolTable();
+		} catch (final IOException e) {
+			throw new RuntimeException(e.getClass().getSimpleName() + " caught", e);
+		}
+
+		SizzleParser.ReInit(new StringReader(source));
+		TestCodeGeneratingVisitor.typeChecker.visit(SizzleParser.Start(), st);
+		SizzleParser.ReInit(new StringReader(source));
+		final String src = codeGenerator.visit(SizzleParser.Start(), st);
+
+		SizzleRunner sizzleRunner = null;
+		try {
+			sizzleRunner = TestCodeGeneratingVisitor.compiler.compile("sizzle.Hello", src, null, new Class<?>[] { SizzleRunner.class }).newInstance();
+		} catch (final CharSequenceCompilerException e) {
+			for (final Diagnostic<? extends JavaFileObject> d : e.getDiagnostics().getDiagnostics())
+				System.err.println(d.toString());
+			throw e;
+		}
+
+		final MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable> mapReduceDriver = new MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable>();
+		mapReduceDriver.setMapper(sizzleRunner.getMapper());
+		// TODO: add the combiner when MAPREDUCE-797 is integrated
+		mapReduceDriver.setReducer(sizzleRunner.getReducer());
+		mapReduceDriver.addInput(new LongWritable(0), new Text(""));
+		mapReduceDriver.runTest();
+	}
+
+	@Test
+	public void testCodeGeneratingVisitorSimple() throws IOException, ParseException, ClassCastException, InstantiationException, IllegalAccessException,
+			CharSequenceCompilerException {
 		final String source = "count: table sum of int;\ntotal: table sum of float;\nsum_of_squares: table sum of float;\nx: float = input;\nemit count <- 1;\nemit total <- x;\nemit sum_of_squares <- x * x;\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("Simple");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("Simple", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -96,11 +133,11 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorSimpleCompound() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException,
-			CharSequenceCompilerException, InstantiationException, IllegalAccessException {
-		final String source = "s: table sum of { count: int, total: float, sum_of_squares: float };\nx: float = input;\nemit s <- 1, x, x * x;\n";
+	public void testCodeGeneratingVisitorSimpleCompound() throws IOException, ParseException, ClassCastException, InstantiationException,
+			IllegalAccessException, CharSequenceCompilerException {
+		final String source = "s: table sum of { count: int, total: float, sum_of_squares: float };\nx: float = input;\nemit s <- { 1, x, x * x };\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("SimpleCompound");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("SimpleCompound", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -129,21 +166,19 @@ public class TestCodeGeneratingVisitor {
 		mapReduceDriver.addInput(new LongWritable(0), new Text("1.0"));
 		mapReduceDriver.addInput(new LongWritable(0), new Text("2.0"));
 		mapReduceDriver.addInput(new LongWritable(0), new Text("3.0"));
-		mapReduceDriver.addOutput(new Text("s.count[] = 3"), NullWritable.get());
-		mapReduceDriver.addOutput(new Text("s.sum_of_squares[] = 14.0"), NullWritable.get());
-		mapReduceDriver.addOutput(new Text("s.total[] = 6.0"), NullWritable.get());
+		mapReduceDriver.addOutput(new Text("s[] = { 3, 6.0, 14.0 }"), NullWritable.get());
 		mapReduceDriver.runTest();
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorQuickExample() throws ParseException, ClassCastException, InstantiationException, IllegalAccessException,
+	public void testCodeGeneratingVisitorQuickExample() throws IOException, ParseException, ClassCastException, InstantiationException, IllegalAccessException,
 			CharSequenceCompilerException {
-		final String source = "topwords: table top(3) of word: string weight count: int;\nfields: array of bytes = splitcsvline(input);\nw: string = string(fields[0]);\nc: int = int(string(fields[1]), 10);\nif (c != 0) {\nemit topwords <- w weight c;\n}\n";
+		final String source = "topwords: table top(3) of word: string weight count: int;\nline: bytes = input;\nfields: array of bytes = splitcsvline(line);\nw: string = string(fields[0]);\nc: int = int(string(fields[1]), 10);\nif (c != 0) {\nemit topwords <- w weight c;\n}\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("QuickExample");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("QuickExample", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
-			st = new SymbolTable(new SizzleBytes());
+			st = new SymbolTable();
 		} catch (final IOException e) {
 			throw new RuntimeException(e.getClass().getSimpleName() + " caught", e);
 		}
@@ -179,10 +214,11 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorRealWordCount() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
-		final String source = "count: table sum[word: string] of int;\nline: string = input;\nwords: array of string = sawzall(line, \"[A-Za-z]+\");\ni: int;\nfor (i = 0; i < len(words); i++)\n\temit count[lowercase(words[i])] <- 1;\n";
+	public void testCodeGeneratingVisitorRealWordCount() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
+			IllegalAccessException {
+		final String source = "count: table sum[word: string] of int;\nline: string = input;\nwords: array of string = sawzall(line, \"[A-Za-z]+\");\nfor (i : int = 0; i < len(words); i++)\n\temit count[lowercase(words[i])] <- 1;\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("RealWordCount");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("RealWordCount", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -242,10 +278,11 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorWordStats() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
-		final String source = "scrabble: table maximum(5) of string weight score: int;\nlongest: table maximum(5) of string weight length: int;\nline: string = input;\nwords: array of string = sawzall(line, \"[A-Za-z]+\");\ni: int;\nfor (i = 0; i < len(words); i++) {\n\temit scrabble <- lowercase(words[i]) weight scrabble(words[i]);\n\temit longest <- lowercase(words[i]) weight len(words[i]);\n}\n";
+	public void testCodeGeneratingVisitorWordStats() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
+			IllegalAccessException {
+		final String source = "scrabble: table maximum(5) of string weight score: int;\nlongest: table maximum(5) of string weight length: int;\nline: string = input;\nwords: array of string = sawzall(line, \"[A-Za-z]+\");\nfor (i: int = 0; i < len(words); i++) {\n\temit scrabble <- lowercase(words[i]) weight scrabble(words[i]);\n\temit longest <- lowercase(words[i]) weight len(words[i]);\n}\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("WordStats");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("WordStats", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -289,11 +326,11 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorFilteredMeanValue() throws ParseException, CharSequenceCompilerException, InstantiationException,
+	public void testCodeGeneratingVisitorFilteredMeanValue() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
 			IllegalAccessException {
 		final String source = "value: table mean of float;\nf: float = input;\nif (f != 0.0) {\n\temit value <- f;\n}\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("FilteredMeanValue");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("FilteredMeanValue", TestCodeGeneratingVisitor.stg);
 
 		SymbolTable st;
 		try {
@@ -333,11 +370,11 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorStringConversion() throws ParseException, CharSequenceCompilerException, InstantiationException,
+	public void testCodeGeneratingVisitorStringConversion() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
 			IllegalAccessException {
 		final String source = "out: table collection of string;\nx: int = input;\ny: bytes = input;\nif (true) {\n\temit out <- string(x, 16);\n}\nemit out <- string(y, \"UTF-8\");\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("StringConversion");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("StringConversion", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -377,11 +414,11 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorValueQuartiles() throws ParseException, ClassCastException, InstantiationException, IllegalAccessException,
-			CharSequenceCompilerException, IOException {
+	public void testCodeGeneratingVisitorValueQuartiles() throws IOException, ParseException, ClassCastException, InstantiationException,
+			IllegalAccessException, CharSequenceCompilerException, IOException {
 		final String source = "quartiles: table quantile(5) of int;\ni: int = input;\nemit quartiles <- i;\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("ValueQuartiles");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("ValueQuartiles", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -422,11 +459,13 @@ public class TestCodeGeneratingVisitor {
 		mapReduceDriver.runTest();
 	}
 
+	@Ignore
 	@Test
-	public void testCodeGeneratingVisitorBigUglyWhen() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
-		final String source = "result: table sum of int;\na: array of int = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };\nb: array of int = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };\nwhen(i0, i1, j0, j1: some int; a[i0:i1] == b[j0:j1] &&\n\t\t\t\t\t\ti1 >= i0+3) {\nemit result <- 1;\n}\n";
+	public void testCodeGeneratingVisitorBigUglyWhen() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
+			IllegalAccessException {
+		final String source = "resultx: table sum of int;\na: array of int = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };\nb: array of int = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };\nwhen(i0, i1, j0, j1: some int; a[i0:i1] == b[j0:j1] &&\n\t\t\t\t\t\ti1 >= i0+3) {\nemit resultx <- 1;\n}\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("BigUglyWhen");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("BigUglyWhen", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -438,7 +477,7 @@ public class TestCodeGeneratingVisitor {
 		TestCodeGeneratingVisitor.typeChecker.visit(SizzleParser.Start(), st);
 		SizzleParser.ReInit(new StringReader(source));
 		final String src = codeGenerator.visit(SizzleParser.Start(), st);
-
+		System.err.println(src);
 		SizzleRunner sizzleRunner = null;
 		try {
 			sizzleRunner = TestCodeGeneratingVisitor.compiler.compile("sizzle.BigUglyWhen", src, null, new Class<?>[] { SizzleRunner.class }).newInstance();
@@ -458,10 +497,11 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorMaps() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
+	public void testCodeGeneratingVisitorMaps() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
+			IllegalAccessException {
 		final String source = "xlated: table collection of lang: string;\nstatic CJK: map[string] of string = {\n\t\"zh\": \"Chinese\",\n\t\"ja\": \"Japanese\",\n\t\"ko\": \"Korean\"\n};\nabbr: string = input;\nemit xlated <- CJK[abbr];\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("Maps");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("Maps", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -497,10 +537,47 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorTimeParser() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
+	public void testCodeGeneratingVisitorUppercaseMap() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
+			IllegalAccessException {
+		final String source = "upper: table collection of x: string;\ns: string = input;\nemit upper <- uppercase(s);";
+
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("UppercaseMap", TestCodeGeneratingVisitor.stg);
+		SymbolTable st;
+		try {
+			st = new SymbolTable();
+		} catch (final IOException e) {
+			throw new RuntimeException(e.getClass().getSimpleName() + " caught", e);
+		}
+
+		SizzleParser.ReInit(new StringReader(source));
+		TestCodeGeneratingVisitor.typeChecker.visit(SizzleParser.Start(), st);
+		SizzleParser.ReInit(new StringReader(source));
+		final String src = codeGenerator.visit(SizzleParser.Start(), st);
+
+		SizzleRunner sizzleRunner = null;
+		try {
+			sizzleRunner = TestCodeGeneratingVisitor.compiler.compile("sizzle.UppercaseMap", src, null, new Class<?>[] { SizzleRunner.class }).newInstance();
+		} catch (final CharSequenceCompilerException e) {
+			for (final Diagnostic<? extends JavaFileObject> d : e.getDiagnostics().getDiagnostics())
+				System.err.println(d.toString());
+			throw e;
+		}
+
+		final MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable> mapReduceDriver = new MapReduceDriver<LongWritable, Text, EmitKey, EmitValue, Text, NullWritable>();
+		mapReduceDriver.setMapper(sizzleRunner.getMapper());
+		// TODO: add the combiner when MAPREDUCE-797 is integrated
+		mapReduceDriver.setReducer(sizzleRunner.getReducer());
+		mapReduceDriver.addInput(new LongWritable(0), new Text("lowercase"));
+		mapReduceDriver.addOutput(new Text("upper[] = LOWERCASE"), NullWritable.get());
+		mapReduceDriver.runTest();
+	}
+
+	@Test
+	public void testCodeGeneratingVisitorTimeParser() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
+			IllegalAccessException {
 		final String source = "times: table collection[timezone: string] of time: string;\nt: string = input;\nemit times[\"PST8PDT\"] <- string(trunctoday(time(t)));emit times[\"America/New_York\"] <- string(trunctoday(time(t), \"America/New_York\"));\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("TimeParser");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("TimeParser", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -533,9 +610,10 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorTopReferers() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
+	public void testCodeGeneratingVisitorTopReferers() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
+			IllegalAccessException {
 		final String source = "best: table top(3)[url: string] of referer: string weight count: int;\nline: string = input;\nfields: array of string = saw(line, \".*GET \", \"[^\\t ]+\", \" HTTP/1.[0-9]\\\"\", \"[0-9]+\", \"[0-9]+\", \"\\\"[^\\t ]+\\\"\");\nemit best[fields[1]] <- fields[5] weight 1;\n";
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("TopReferers");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("TopReferers", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -571,10 +649,11 @@ public class TestCodeGeneratingVisitor {
 	}
 
 	@Test
-	public void testCodeGeneratingVisitorRegex() throws ParseException, CharSequenceCompilerException, InstantiationException, IllegalAccessException {
+	public void testCodeGeneratingVisitorRegex() throws IOException, ParseException, CharSequenceCompilerException, InstantiationException,
+			IllegalAccessException {
 		final String source = "out: table collection[name: string] of output: string;\nemit out[\"int,16\"] <- regex(int, 16);\nemit out[\"int,10\"] <- regex(int, 10);\nemit out[\"int,8\"] <- regex(int, 8);\nemit out[\"float\"] <- regex(float);\nemit out[\"time\"] <- regex(time);\nemit out[\"string\"] <- regex(string);\n";
 
-		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("Regex");
+		final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor("Regex", TestCodeGeneratingVisitor.stg);
 		SymbolTable st;
 		try {
 			st = new SymbolTable();
@@ -609,4 +688,81 @@ public class TestCodeGeneratingVisitor {
 		mapReduceDriver.addOutput(new Text("out[time] = [0-9]+"), NullWritable.get());
 		mapReduceDriver.runTest();
 	}
+
+	// do
+	// d++;
+	// while (d*d < x);
+
+	// i++;
+	// a[i]--;
+	// f(x, y);
+
+	// e := ?{
+	// j := function(): int { result 1; }; # compile-time error
+	// };
+
+	// x := function(): int {
+	// n := ?{
+	// return 2; # compile-time error
+	// };
+	// };
+
+	// while (d*d < x)
+	// d++;
+
+	// function() {}
+	// function(radius: float): float { return 2.0 * PI * radius; }
+	// Action { kill_bill(); }
+
+	// # signum
+	// signum := ?{ switch(true) { case x < 0: result -1; case x > 0: result 1;
+	// default: result 0; };
+	//
+	// # array filtering
+	// a = ?{
+	// aa: array of int = {};
+	// when (i: each int; Test(a[i])) aa = aa + {a[i]};
+	// result aa;
+	// };
+
+	// 1 # = 1
+	// 011 # = 9
+	// 0b1010 # = 10
+	// 42 # = 42
+	// 0x7f # = 127
+
+	// 1u # = 1
+	// 011u # = 9
+	// 0b1010U # = 10
+	// 42u # = 42
+	// 0x7fU # = 127
+	// 18446744073709551616U # = largest possible 64-bit value
+
+	// 0p # the fingerprint with value 0
+	// 0x6347P # the fingerprint with value 25415
+
+	// .01 # = 0.01
+	// 1e-3 # = 0.001
+	// 2. # = 2.0
+	// 3.1415 # = 3.1415
+	// 2.18E5 # = 218000.0
+
+	// '\n' # = 10
+	// 'A' # = 65
+
+	// "" # empty string
+	// "Sawzall\n" # Sawzall followed by a newline character
+	// `"Hello"` # "Hello" (including the "'s)
+
+	// B"" # empty bytes literal
+	// B"hello" # five bytes
+	// B`"` # one byte, a double quote
+	// B"\xff" # one byte, value 255
+	// X"0011AB" # three bytes: 0x00 0x11 0xAB
+
+	// 0t # 0 microseconds
+	// 1000000T # 1 second
+	// T"Tue Jun  5 10:43:07 America/Los_Angeles 2007"
+	// T"Wed Feb  4 16:26:41 PST 2004"
+
 }

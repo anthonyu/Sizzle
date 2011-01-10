@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.junit.Assert;
@@ -33,7 +32,7 @@ public class TestTypeCheckingVisitor {
 
 	@BeforeClass
 	public static void init() {
-		TestTypeCheckingVisitor.typeChecker = new TypeCheckingVisitor(new NameFindingVisitor());
+		TestTypeCheckingVisitor.typeChecker = new TypeCheckingVisitor();
 		// this is a JavaCC wtf, do not remove
 		try {
 			new SizzleParser(new StringReader(""));
@@ -179,9 +178,9 @@ public class TestTypeCheckingVisitor {
 		final SymbolTable st = new SymbolTable();
 
 		// fake functions for this unit test
-		st.setFunction("day_of_query", new SizzleFunction("Nonexistant.day_of_query", new SizzleInt(), new SizzleType[] {}));
-		st.setFunction("month_of_query", new SizzleFunction("Nonexistant.month_of_query", new SizzleInt(), new SizzleType[] {}));
-		st.setFunction("words_from_query", new SizzleFunction("Nonexistant.words_from_query", new SizzleArray(new SizzleString()), new SizzleType[] {}));
+		st.setFunction("day_of_query", new SizzleFunction(new SizzleInt(), new SizzleType[] {}, "Nonexistant.day_of_query()"));
+		st.setFunction("month_of_query", new SizzleFunction(new SizzleInt(), new SizzleType[] {}, "Nonexistant.month_of_query()"));
+		st.setFunction("words_from_query", new SizzleFunction(new SizzleArray(new SizzleString()), new SizzleType[] {}, "Nonexistant.words_from_query()"));
 
 		SizzleParser.ReInit(new StringReader(source));
 		TestTypeCheckingVisitor.typeChecker.visit(SizzleParser.Start(), st);
@@ -213,9 +212,9 @@ public class TestTypeCheckingVisitor {
 		final SymbolTable st = new SymbolTable();
 
 		// fake functions for this unit test
-		st.setFunction("day_of_query", new SizzleFunction("Nonexistant.day_of_query", new SizzleInt(), new SizzleType[] {}));
-		st.setFunction("month_of_query", new SizzleFunction("Nonexistant.month_of_query", new SizzleInt(), new SizzleType[] {}));
-		st.setFunction("words_from_query", new SizzleFunction("Nonexistant.words_from_query", new SizzleArray(new SizzleString()), new SizzleType[] {}));
+		st.setFunction("day_of_query", new SizzleFunction(new SizzleInt(), new SizzleType[] {}, "Nonexistant.day_of_query()"));
+		st.setFunction("month_of_query", new SizzleFunction(new SizzleInt(), new SizzleType[] {}, "Nonexistant.month_of_query()"));
+		st.setFunction("words_from_query", new SizzleFunction(new SizzleArray(new SizzleString()), new SizzleType[] {}, "Nonexistant.words_from_query()"));
 
 		SizzleParser.ReInit(new StringReader(source));
 		TestTypeCheckingVisitor.typeChecker.visit(SizzleParser.Start(), st);

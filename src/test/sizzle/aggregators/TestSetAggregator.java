@@ -163,7 +163,7 @@ class SetSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public SetSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.SetAggregator(3));
+		this.tables.put("test", new Table(new sizzle.aggregators.SetAggregator(3)));
 	}
 }
 
@@ -171,6 +171,6 @@ class SetSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public SetSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.SetAggregator(3));
+		this.tables.put("test", new Table(new sizzle.aggregators.SetAggregator(3)));
 	}
 }

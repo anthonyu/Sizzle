@@ -3,6 +3,7 @@ package sizzle.aggregators;
 import java.io.IOException;
 
 import sizzle.io.EmitKey;
+import sizzle.io.EmitValue;
 
 /**
  * A Sizzle aggregator to calculate the sum of the values in a dataset.
@@ -47,6 +48,12 @@ public class FloatSumAggregator extends Aggregator {
 	@Override
 	public void finish() throws IOException, InterruptedException {
 		this.collect(this.sum);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public EmitValue getResult() {
+		return new EmitValue(this.sum);
 	}
 
 	/** {@inheritDoc} */

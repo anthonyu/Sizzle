@@ -41,7 +41,7 @@ class FloatSumSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public FloatSumSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.FloatSumAggregator());
+		this.tables.put("test", new Table(new sizzle.aggregators.FloatSumAggregator()));
 	}
 }
 
@@ -49,6 +49,6 @@ class FloatSumSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public FloatSumSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.FloatSumAggregator());
+		this.tables.put("test", new Table(new sizzle.aggregators.FloatSumAggregator()));
 	}
 }

@@ -1,7 +1,5 @@
 package sizzle.compiler;
 
-import java.io.IOException;
-
 import sizzle.parser.syntaxtree.ArrayType;
 import sizzle.parser.syntaxtree.Assignment;
 import sizzle.parser.syntaxtree.Block;
@@ -36,6 +34,7 @@ import sizzle.parser.syntaxtree.IntegerLiteral;
 import sizzle.parser.syntaxtree.MapType;
 import sizzle.parser.syntaxtree.Node;
 import sizzle.parser.syntaxtree.NodeChoice;
+import sizzle.parser.syntaxtree.NodeSequence;
 import sizzle.parser.syntaxtree.Operand;
 import sizzle.parser.syntaxtree.OutputType;
 import sizzle.parser.syntaxtree.Pair;
@@ -71,17 +70,10 @@ import sizzle.parser.syntaxtree.WhenStatement;
 import sizzle.parser.syntaxtree.WhileStatement;
 import sizzle.parser.visitor.GJDepthFirst;
 
-/**
- * Prescan the Sizzle program and generate initializer code for any static
- * variables.
- * 
- * @author anthonyu
- * 
- */
-public class StaticDeclarationCodeGeneratingVisitor extends GJDepthFirst<String, SymbolTable> {
+public class StaticInitializationCodeGeneratingVisitor extends GJDepthFirst<String, SymbolTable> {
 	private final CodeGeneratingVisitor codegenerator;
 
-	public StaticDeclarationCodeGeneratingVisitor(final CodeGeneratingVisitor codegenerator) throws IOException {
+	public StaticInitializationCodeGeneratingVisitor(final CodeGeneratingVisitor codegenerator) {
 		this.codegenerator = codegenerator;
 	}
 
@@ -135,12 +127,26 @@ public class StaticDeclarationCodeGeneratingVisitor extends GJDepthFirst<String,
 
 	@Override
 	public String visit(final StaticVarDecl n, final SymbolTable argu) {
-		return "private static " + this.codegenerator.visit(n.f1, argu);
+		return n.f1.accept(this, argu);
 	}
 
 	@Override
 	public String visit(final VarDecl n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		if (n.f3.present()) {
+			final NodeChoice nodeChoice = (NodeChoice) n.f3.node;
+
+			switch (nodeChoice.which) {
+			case 0: // initializer
+				argu.setId("___" + n.f0.f0.tokenImage);
+				final String accept = ((NodeSequence) nodeChoice.choice).elementAt(1).accept(this, argu);
+				argu.setId(null);
+				return accept;
+			default:
+				throw new RuntimeException("unexpected choice " + nodeChoice.which + " is " + nodeChoice.choice.getClass());
+			}
+		} else {
+			return null;
+		}
 	}
 
 	@Override
@@ -310,32 +316,32 @@ public class StaticDeclarationCodeGeneratingVisitor extends GJDepthFirst<String,
 
 	@Override
 	public String visit(final Expression n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		return n.f0.accept(this, argu);
 	}
 
 	@Override
 	public String visit(final Conjunction n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		return n.f0.accept(this, argu);
 	}
 
 	@Override
 	public String visit(final Comparison n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		return n.f0.accept(this, argu);
 	}
 
 	@Override
 	public String visit(final SimpleExpr n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		return n.f0.accept(this, argu);
 	}
 
 	@Override
 	public String visit(final Term n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		return n.f0.accept(this, argu);
 	}
 
 	@Override
 	public String visit(final Factor n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		return n.f0.accept(this, argu);
 	}
 
 	@Override
@@ -365,12 +371,26 @@ public class StaticDeclarationCodeGeneratingVisitor extends GJDepthFirst<String,
 
 	@Override
 	public String visit(final Operand n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		return n.f0.accept(this, argu);
 	}
 
 	@Override
 	public String visit(final Composite n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		if (n.f1.present()) {
+			final NodeChoice nodeChoice = (NodeChoice) n.f1.node;
+
+			switch (nodeChoice.which) {
+			case 0: // pair list
+				return this.codegenerator.visit((PairList) nodeChoice.choice, argu);
+			case 1: // expression list
+			case 2: // empty map
+				return null;
+			default:
+				throw new RuntimeException("unexpected choice " + nodeChoice.which + " is " + nodeChoice.choice.getClass());
+			}
+		} else {
+			throw new RuntimeException("unimplemented");
+		}
 	}
 
 	@Override
@@ -437,109 +457,4 @@ public class StaticDeclarationCodeGeneratingVisitor extends GJDepthFirst<String,
 	public String visit(final TimeLiteral n, final SymbolTable argu) {
 		throw new RuntimeException("unimplemented");
 	}
-
-	// private final NameFindingVisitor namefinder;
-	//
-	// /**
-	// * Construct a StaticDeclarationCodeGeneratingVisitor.
-	// *
-	// * @param namefinder
-	// * A {@link NameFindingVisitor} used to find names.
-	// */
-	// public StaticDeclarationCodeGeneratingVisitor(final NameFindingVisitor
-	// namefinder) {
-	// this.namefinder = namefinder;
-	// }
-	//
-	// /** {@inheritDoc} */
-	// @Override
-	// public String visit(final Pair n, final SymbolTable argu) {
-	// return argu.getMapName() + ".put(" + n.f0.accept(this, argu) + ", " +
-	// n.f2.accept(this, argu) + ");\n";
-	// }
-	//
-	// /** {@inheritDoc} */
-	// @Override
-	// public String visit(final PairList n, final SymbolTable argu) {
-	// final StringBuilder src = new StringBuilder();
-	//
-	// src.append(n.f0.accept(this, argu));
-	//
-	// if (n.f1.present())
-	// for (final Node node : n.f1.nodes)
-	// src.append(node.accept(this, argu));
-	//
-	// return src.toString();
-	// }
-	//
-	// /** {@inheritDoc} */
-	// @Override
-	// public String visit(final Start n, final SymbolTable argu) {
-	// return n.f0.accept(this, argu);
-	// }
-	//
-	// /** {@inheritDoc} */
-	// @Override
-	// public String visit(final Program n, final SymbolTable argu) {
-	// final StringBuilder statements = new StringBuilder();
-	//
-	// for (final Node i : n.f0.nodes) {
-	// final String src = ((Statement) i).accept(this, argu);
-	// if (src != null && !src.equals(""))
-	// statements.append(src + "\n");
-	// }
-	//
-	// return statements.toString();
-	// }
-	//
-	// /** {@inheritDoc} */
-	// @Override
-	// public String visit(final Statement n, final SymbolTable argu) {
-	// switch (n.f0.which) {
-	// case 2: // static variable declaration
-	// return ((VariableDeclaration) n.f0.choice).accept(this, argu);
-	// default:
-	// return "";
-	// }
-	// }
-	//
-	// /** {@inheritDoc} */
-	// @Override
-	// public String visit(final StaticVariableDeclaration n, final SymbolTable
-	// argu) {
-	// return n.f1.accept(this, argu);
-	// }
-	//
-	// /** {@inheritDoc} */
-	// @Override
-	// public String visit(final VariableDeclaration n, final SymbolTable argu)
-	// {
-	// final StringBuilder src = new StringBuilder();
-	//
-	// for (final String id : this.namefinder.visit(n.f1)) {
-	// final SizzleType sizzleType = argu.get(id);
-	//
-	// final String javaType = sizzleType.toJavaType();
-	//
-	// if (n.f3.present()) {
-	// argu.setInitializerType(sizzleType);
-	// argu.setMapName("___" + id);
-	// final String initializer = ((Initializer) ((NodeSequence)
-	// n.f3.node).elementAt(1)).accept(this, argu);
-	// argu.setMapName(null);
-	// argu.setInitializerType(null);
-	//
-	// src.append("private static final " + javaType + " ___" + id + " = " +
-	// initializer + ";");
-	// if (sizzleType.getClass().equals(SizzleMap.class)) {
-	// src.append("\n{\n" + argu.getStaticInitializer() + "\n}\n");
-	// }
-	// } else {
-	// throw new RuntimeException("static variables must be initialized");
-	// }
-	//
-	// }
-	//
-	// return src.toString();
-	// }
 }

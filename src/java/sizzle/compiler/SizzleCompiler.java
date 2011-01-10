@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.zip.ZipEntry;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
+import org.antlr.stringtemplate.StringTemplateGroup;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
@@ -132,8 +134,6 @@ public class SizzleCompiler {
 		if (!(filename.endsWith(".sizzle") || filename.endsWith(".szl")))
 			throw new RuntimeException("unsupported extension for " + in.getAbsolutePath());
 
-		final BufferedReader r = new BufferedReader(new FileReader(in));
-
 		// make the output directory
 		final File dir = new File(new File(System.getProperty("java.io.tmpdir")), UUID.randomUUID().toString());
 		final File dirfile = new File(dir.getPath() + File.separatorChar + "sizzle");
@@ -147,13 +147,28 @@ public class SizzleCompiler {
 
 		final BufferedOutputStream o = new BufferedOutputStream(new FileOutputStream(dirfile.toString() + File.separatorChar + name + ".java"));
 		try {
-			final NameFindingVisitor nameFinder = new NameFindingVisitor();
-			final TypeCheckingVisitor typeChecker = new TypeCheckingVisitor(nameFinder);
-			final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor(name);
+			final TypeCheckingVisitor typeChecker = new TypeCheckingVisitor();
+
+			final URL url = CodeGeneratingVisitor.class.getClassLoader().getResource("SizzleJavaHadoop.stg");
+			final BufferedReader s = new BufferedReader(new InputStreamReader(url.openStream()));
+			final StringTemplateGroup stg;
+			try {
+				stg = new StringTemplateGroup(s);
+			} finally {
+				s.close();
+			}
+
+			final CodeGeneratingVisitor codeGenerator = new CodeGeneratingVisitor(name, stg);
 
 			final SymbolTable st = new SymbolTable(libs);
 
-			new SizzleParser(r);
+			final BufferedReader r = new BufferedReader(new FileReader(in));
+			try {
+				new SizzleParser(r);
+			} finally {
+				r.close();
+			}
+
 			final Start start = SizzleParser.Start();
 
 			typeChecker.visit(start, st);

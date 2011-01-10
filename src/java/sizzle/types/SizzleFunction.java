@@ -10,46 +10,20 @@ import java.util.Arrays;
  * 
  */
 public class SizzleFunction extends SizzleType {
-	private String canonicalName;
 	private SizzleType type;
 	private SizzleType[] formalParameters;
+	private String name;
 	private String macro;
 
 	/**
 	 * Construct a SizzleFunction.
 	 * 
-	 * @param canonicalName
-	 *            A String containing the canonical name of the Java
-	 *            implementation of this function
-	 * 
 	 * @param type
 	 *            A {@link SizzleType} representing the return type
 	 * 
 	 */
-	public SizzleFunction(final String canonicalName, final SizzleType type) {
-		this.setCanonicalName(canonicalName);
+	public SizzleFunction(final SizzleType type) {
 		this.type = type;
-	}
-
-	/**
-	 * Construct a SizzleFunction.
-	 * 
-	 * @param canonicalName
-	 *            A String containing the canonical name of the Java
-	 *            implementation of this function
-	 * 
-	 * @param type
-	 *            A {@link SizzleType} representing the return type
-	 * 
-	 * @param formalParameters
-	 *            An array of {@link SizzleType} containing the type of each
-	 *            formal parameter
-	 * 
-	 */
-	public SizzleFunction(final String canonicalName, final SizzleType type, final SizzleType[] formalParameters) {
-		this(canonicalName, type);
-
-		this.formalParameters = formalParameters;
 	}
 
 	/**
@@ -64,7 +38,9 @@ public class SizzleFunction extends SizzleType {
 	 * 
 	 */
 	public SizzleFunction(final SizzleType type, final SizzleType[] formalParameters) {
-		this(null, type, formalParameters);
+		this(type);
+
+		this.formalParameters = formalParameters;
 	}
 
 	/**
@@ -82,9 +58,29 @@ public class SizzleFunction extends SizzleType {
 	 * 
 	 */
 	public SizzleFunction(final SizzleType type, final SizzleType[] formalParameters, final String macro) {
-		this(null, type, formalParameters);
+		this(type, formalParameters);
 
 		this.macro = macro;
+	}
+
+	/**
+	 * Construct a SizzleFunction.
+	 * 
+	 * @param name
+	 *            A {@link String} containing the canonical name of the function
+	 * 
+	 * @param type
+	 *            A {@link SizzleType} representing the return type
+	 * 
+	 * @param formalParameters
+	 *            An array of {@link SizzleType} containing the type of each
+	 *            formal parameter
+	 * 
+	 */
+	public SizzleFunction(final String name, final SizzleType type, final SizzleType[] formalParameters) {
+		this(type, formalParameters);
+
+		this.name = name;
 	}
 
 	/** {@inheritDoc} */
@@ -129,6 +125,16 @@ public class SizzleFunction extends SizzleType {
 	}
 
 	/**
+	 * Returns whether this function has a name.
+	 * 
+	 * @return True iff this function has a name
+	 * 
+	 */
+	public boolean hasName() {
+		return this.name != null;
+	}
+
+	/**
 	 * Returns whether this function has a macro.
 	 * 
 	 * @return True iff this function has a macro
@@ -136,29 +142,6 @@ public class SizzleFunction extends SizzleType {
 	 */
 	public boolean hasMacro() {
 		return this.macro != null;
-	}
-
-	/**
-	 * Get the canonical name of the Java implementation of this function.
-	 * 
-	 * @return A {@link String} containing the canonical name of the Java
-	 *         implementation of this function
-	 * 
-	 */
-	public String getCanonicalName() {
-		return this.canonicalName;
-	}
-
-	/**
-	 * Set the canonical name of the Java implementation of this function.
-	 * 
-	 * @param canonicalName
-	 *            A {@link String} containing the canonical name of the Java
-	 *            implementation of this function
-	 * 
-	 */
-	public void setCanonicalName(final String canonicalName) {
-		this.canonicalName = canonicalName;
 	}
 
 	/**
@@ -207,6 +190,14 @@ public class SizzleFunction extends SizzleType {
 		this.formalParameters = formalParameters;
 	}
 
+	public String getName() {
+		return this.name;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
 	public String getMacro() {
 		return this.macro;
 	}
@@ -218,7 +209,7 @@ public class SizzleFunction extends SizzleType {
 	/** {@inheritDoc} */
 	@Override
 	public String toString() {
-		return this.canonicalName + " function" + Arrays.toString(this.formalParameters) + ": " + this.type.toString();
+		return "function" + Arrays.toString(this.formalParameters) + ": " + this.type.toString();
 	}
 
 	/** {@inheritDoc} */

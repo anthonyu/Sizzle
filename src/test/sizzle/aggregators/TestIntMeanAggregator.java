@@ -41,7 +41,7 @@ class IntMeanSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public IntMeanSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.IntMeanAggregator());
+		this.tables.put("test", new Table(new sizzle.aggregators.IntMeanAggregator()));
 	}
 }
 
@@ -49,6 +49,6 @@ class IntMeanSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public IntMeanSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.IntMeanAggregator());
+		this.tables.put("test", new Table(new sizzle.aggregators.IntMeanAggregator()));
 	}
 }

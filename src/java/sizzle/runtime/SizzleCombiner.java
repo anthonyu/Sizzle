@@ -9,7 +9,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.log4j.Logger;
 
-import sizzle.aggregators.Aggregator;
+import sizzle.aggregators.Table;
 import sizzle.aggregators.FinishedException;
 import sizzle.io.EmitKey;
 import sizzle.io.EmitValue;
@@ -29,10 +29,10 @@ public abstract class SizzleCombiner extends Reducer<EmitKey, EmitValue, EmitKey
 	protected static final Logger LOG = Logger.getLogger(SizzleCombiner.class);
 
 	/**
-	 * A {@link Map} from {@link String} to {@link Aggregator} indexing
-	 * instantiated aggregators to their Sizzle identifiers.
+	 * A {@link Map} from {@link String} to {@link Table} indexing instantiated
+	 * tables to their Sizzle identifiers.
 	 */
-	protected Map<String, Aggregator> aggregators;
+	protected Map<String, Table> tables;
 
 	private Configuration conf;
 	private boolean robust;
@@ -41,7 +41,7 @@ public abstract class SizzleCombiner extends Reducer<EmitKey, EmitValue, EmitKey
 	 * Construct a SizzleCombiner.
 	 */
 	protected SizzleCombiner() {
-		this.aggregators = new HashMap<String, Aggregator>();
+		this.tables = new HashMap<String, Table>();
 	}
 
 	/** {@inheritDoc} */
@@ -60,12 +60,12 @@ public abstract class SizzleCombiner extends Reducer<EmitKey, EmitValue, EmitKey
 	/** {@inheritDoc} */
 	@Override
 	protected void reduce(final EmitKey key, final Iterable<EmitValue> values, final Context context) throws IOException, InterruptedException {
-		// get the aggregator named by the emit key
-		final Aggregator a = this.aggregators.get(key.getName());
+		// get the table named by the emit key
+		final Table t = this.tables.get(key.getName());
 
 		// if we are non-associative, just pass the output through
 		// TODO: find away to avoid combiner entirely when non-associative
-		if (!a.isAssociative()) {
+		if (!t.isAssociative()) {
 			for (final EmitValue value : values)
 				context.write(key, value);
 
@@ -73,21 +73,21 @@ public abstract class SizzleCombiner extends Reducer<EmitKey, EmitValue, EmitKey
 		}
 
 		// tell it we will be combining
-		a.setCombining(true);
+		t.setCombining(true);
 
 		// Counter counter = context.getCounter("Values Emitted",
 		// key.toString());
 		// LOG.fatal("counter for \"Values Output\"" + key.toString() + " " +
 		// Long.toString(counter.getValue()));
 
-		// initialize the aggregator
-		a.start(key);
+		// initialize the table
+		t.start(key);
 		// set the reducer context
-		a.setContext(context);
+		t.setContext(context);
 
 		for (final EmitValue value : values)
 			try {
-				a.aggregate(value.getData(), value.getMetadata());
+				t.aggregate(value.getData(), value.getMetadata());
 			} catch (final FinishedException e) {
 				// we are done
 				return;
@@ -110,6 +110,6 @@ public abstract class SizzleCombiner extends Reducer<EmitKey, EmitValue, EmitKey
 			}
 
 		// finish it!
-		a.finish();
+		t.finish();
 	}
 }

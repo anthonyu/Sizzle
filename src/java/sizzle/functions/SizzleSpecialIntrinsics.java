@@ -164,7 +164,7 @@ public class SizzleSpecialIntrinsics {
 
 	// TODO: implement new()
 
-	public static String regex(final String type, final int base) {
+	public static String regex(final String type, final long base) {
 		if (SizzleSpecialIntrinsics.regexMap.containsKey(type + "," + base))
 			return SizzleSpecialIntrinsics.regexMap.get(type + "," + base);
 		else

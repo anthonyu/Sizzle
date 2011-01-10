@@ -87,6 +87,11 @@ public class SizzleTuple extends SizzleType {
 	}
 
 	@Override
+	public String toJavaType() {
+		return "Object[]";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();

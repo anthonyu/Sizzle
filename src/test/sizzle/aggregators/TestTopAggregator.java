@@ -230,7 +230,7 @@ class TopSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public TopSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.TopAggregator(10));
+		this.tables.put("test", new Table(new sizzle.aggregators.TopAggregator(10)));
 	}
 }
 
@@ -238,7 +238,7 @@ class TopSizzleReducerTen extends sizzle.runtime.SizzleReducer {
 	public TopSizzleReducerTen() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.TopAggregator(10));
+		this.tables.put("test", new Table(new sizzle.aggregators.TopAggregator(10)));
 	}
 }
 
@@ -246,6 +246,6 @@ class TopSizzleReducerOne extends sizzle.runtime.SizzleReducer {
 	public TopSizzleReducerOne() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.TopAggregator(1));
+		this.tables.put("test", new Table(new sizzle.aggregators.TopAggregator(1)));
 	}
 }

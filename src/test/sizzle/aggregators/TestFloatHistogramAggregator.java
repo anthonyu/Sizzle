@@ -69,7 +69,7 @@ class FloatHistogramSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public FloatHistogramSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.FloatHistogramAggregator(-400, 400, 8));
+		this.tables.put("test", new Table(new sizzle.aggregators.FloatHistogramAggregator(-400, 400, 8)));
 	}
 }
 
@@ -77,6 +77,6 @@ class FloatHistogramSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public FloatHistogramSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.FloatHistogramAggregator(-400, 400, 8));
+		this.tables.put("test", new Table(new sizzle.aggregators.FloatHistogramAggregator(-400, 400, 8)));
 	}
 }

@@ -131,7 +131,7 @@ class MinimumSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public MinimumSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.MinimumAggregator(10));
+		this.tables.put("test", new Table(new sizzle.aggregators.MinimumAggregator(10)));
 	}
 }
 
@@ -139,7 +139,7 @@ class MinimumSizzleReducerTen extends sizzle.runtime.SizzleReducer {
 	public MinimumSizzleReducerTen() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.MinimumAggregator(10));
+		this.tables.put("test", new Table(new sizzle.aggregators.MinimumAggregator(10)));
 	}
 }
 
@@ -147,6 +147,6 @@ class MinimumSizzleReducerOne extends sizzle.runtime.SizzleReducer {
 	public MinimumSizzleReducerOne() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.MinimumAggregator(1));
+		this.tables.put("test", new Table(new sizzle.aggregators.MinimumAggregator(1)));
 	}
 }

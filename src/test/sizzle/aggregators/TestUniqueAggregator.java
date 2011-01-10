@@ -107,7 +107,7 @@ class UniqueSizzleCombiner extends sizzle.runtime.SizzleCombiner {
 	public UniqueSizzleCombiner() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.UniqueAggregator(10000));
+		this.tables.put("test", new Table(new sizzle.aggregators.UniqueAggregator(10000)));
 	}
 }
 
@@ -115,6 +115,6 @@ class UniqueSizzleReducer extends sizzle.runtime.SizzleReducer {
 	public UniqueSizzleReducer() {
 		super();
 
-		this.aggregators.put("test", new sizzle.aggregators.UniqueAggregator(10000));
+		this.tables.put("test", new Table(new sizzle.aggregators.UniqueAggregator(10000)));
 	}
 }

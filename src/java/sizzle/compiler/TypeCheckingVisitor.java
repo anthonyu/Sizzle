@@ -26,7 +26,9 @@ import sizzle.parser.syntaxtree.Expression;
 import sizzle.parser.syntaxtree.Factor;
 import sizzle.parser.syntaxtree.FingerprintLiteral;
 import sizzle.parser.syntaxtree.FloatingPointLiteral;
+import sizzle.parser.syntaxtree.ForExprStatement;
 import sizzle.parser.syntaxtree.ForStatement;
+import sizzle.parser.syntaxtree.ForVarDecl;
 import sizzle.parser.syntaxtree.Function;
 import sizzle.parser.syntaxtree.FunctionType;
 import sizzle.parser.syntaxtree.Identifier;
@@ -38,6 +40,7 @@ import sizzle.parser.syntaxtree.MapType;
 import sizzle.parser.syntaxtree.Node;
 import sizzle.parser.syntaxtree.NodeChoice;
 import sizzle.parser.syntaxtree.NodeSequence;
+import sizzle.parser.syntaxtree.NodeToken;
 import sizzle.parser.syntaxtree.Operand;
 import sizzle.parser.syntaxtree.OutputType;
 import sizzle.parser.syntaxtree.Pair;
@@ -96,12 +99,6 @@ import sizzle.types.SizzleType;
  * 
  */
 public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
-	private final NameFindingVisitor nameFinder;
-
-	public TypeCheckingVisitor(final NameFindingVisitor nameFinder) {
-		this.nameFinder = nameFinder;
-	}
-
 	/** {@inheritDoc} */
 	@Override
 	public SizzleType visit(final Start n, final SymbolTable argu) {
@@ -122,7 +119,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 	public SizzleType visit(final Declaration n, final SymbolTable argu) {
 		switch (n.f0.which) {
 		case 0: // type declaration
-		case 1: // static variable declararion
+		case 1: // static variable declaration
 		case 2: // variable declaration
 			return n.f0.choice.accept(this, argu);
 		default:
@@ -133,7 +130,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 	/** {@inheritDoc} */
 	@Override
 	public SizzleType visit(final TypeDecl n, final SymbolTable argu) {
-		final String id = new ArrayList<String>(this.nameFinder.visit(n.f1)).get(0);
+		final String id = n.f1.f0.tokenImage;
 
 		if (argu.hasType(id))
 			throw new TypeException(id + " already defined as " + argu.getType(id));
@@ -152,73 +149,73 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 	/** {@inheritDoc} */
 	@Override
 	public SizzleType visit(final VarDecl n, final SymbolTable argu) {
-		for (final String id : this.nameFinder.visit(n.f0)) {
-			if (argu.contains(id))
-				throw new TypeException("variable " + id + " already declared as " + argu.get(id));
+		final String id = n.f0.f0.tokenImage;
 
-			SizzleType rhs = null;
-			if (n.f3.present()) {
-				final NodeChoice nodeChoice = (NodeChoice) n.f3.node;
-				switch (nodeChoice.which) {
-				case 0: // initializer
-					rhs = ((NodeSequence) nodeChoice.choice).elementAt(1).accept(this, argu);
-					break;
-				default:
-					throw new RuntimeException("unexpected choice " + nodeChoice.which + " is " + nodeChoice.choice.getClass());
-				}
+		if (argu.contains(id))
+			throw new TypeException("variable " + id + " already declared as " + argu.get(id));
+
+		SizzleType rhs = null;
+		if (n.f3.present()) {
+			final NodeChoice nodeChoice = (NodeChoice) n.f3.node;
+			switch (nodeChoice.which) {
+			case 0: // initializer
+				rhs = ((NodeSequence) nodeChoice.choice).elementAt(1).accept(this, argu);
+				break;
+			default:
+				throw new RuntimeException("unexpected choice " + nodeChoice.which + " is " + nodeChoice.choice.getClass());
 			}
-
-			SizzleType lhs;
-			if (n.f2.present()) {
-				lhs = n.f2.node.accept(this, argu);
-
-				if (rhs != null && !lhs.assigns(rhs) && !argu.hasCast(lhs, rhs))
-					throw new TypeException("incorrect type " + rhs + " for assignment to " + id + ':' + lhs);
-			} else {
-				if (rhs == null)
-					throw new TypeException("variable declaration requires a type or an initializer");
-
-				lhs = rhs;
-			}
-
-			argu.set(id, lhs);
-
-			// switch (n.f2.which) {
-			// case 0: // identifier
-			// final SizzleType ittype = argu.getType(((Identifier)
-			// n.f2.choice).f0.tokenImage);
-			//
-			// if (n.f3.present()) {
-			// final SizzleType ietype = ((Initializer) ((NodeSequence)
-			// n.f3.node).nodes.get(1)).accept(this, argu);
-			//
-			// if (!ittype.assigns(ietype) && !argu.hasCast(ittype, ietype))
-			// throw new TypeException("incorrect type " + ietype +
-			// " for assignment to " + id + ':' + ittype);
-			//
-			// argu.set(id, ittype, false);
-			// } else
-			// argu.set(id, ittype);
-			// break;
-			// case 1: // map
-			// final NodeSequence seq = (NodeSequence) n.f2.choice;
-			// final SizzleType mvtype = new SizzleMap((SizzleScalar)
-			// argu.getType(((Identifier) seq.elementAt(2)).f0.tokenImage),
-			// (SizzleScalar) argu.getType(((Identifier)
-			// seq.elementAt(5)).f0.tokenImage));
-			//
-			// if (n.f3.present()) {
-			// final SizzleType mitype = ((Initializer) ((NodeSequence)
-			// n.f3.node).nodes.get(1)).accept(this, argu);
-			//
-			// if (!mvtype.assigns(mitype))
-			// throw new TypeException("incorrect type " + mitype +
-			// " for assignment to " + id + ':' + mvtype);
-			// }
-			//
-			// argu.set(id, mvtype);
-			// break;
 		}
+
+		SizzleType lhs;
+		if (n.f2.present()) {
+			lhs = n.f2.node.accept(this, argu);
+
+			if (rhs != null && !lhs.assigns(rhs) && !argu.hasCast(lhs, rhs))
+				throw new TypeException("incorrect type " + rhs + " for assignment to " + id + ':' + lhs);
+		} else {
+			if (rhs == null)
+				throw new TypeException("variable declaration requires a type or an initializer");
+
+			lhs = rhs;
+		}
+
+		argu.set(id, lhs);
+
+		// switch (n.f2.which) {
+		// case 0: // identifier
+		// final SizzleType ittype = argu.getType(((Identifier)
+		// n.f2.choice).f0.tokenImage);
+		//
+		// if (n.f3.present()) {
+		// final SizzleType ietype = ((Initializer) ((NodeSequence)
+		// n.f3.node).nodes.get(1)).accept(this, argu);
+		//
+		// if (!ittype.assigns(ietype) && !argu.hasCast(ittype, ietype))
+		// throw new TypeException("incorrect type " + ietype +
+		// " for assignment to " + id + ':' + ittype);
+		//
+		// argu.set(id, ittype, false);
+		// } else
+		// argu.set(id, ittype);
+		// break;
+		// case 1: // map
+		// final NodeSequence seq = (NodeSequence) n.f2.choice;
+		// final SizzleType mvtype = new SizzleMap((SizzleScalar)
+		// argu.getType(((Identifier) seq.elementAt(2)).f0.tokenImage),
+		// (SizzleScalar) argu.getType(((Identifier)
+		// seq.elementAt(5)).f0.tokenImage));
+		//
+		// if (n.f3.present()) {
+		// final SizzleType mitype = ((Initializer) ((NodeSequence)
+		// n.f3.node).nodes.get(1)).accept(this, argu);
+		//
+		// if (!mvtype.assigns(mitype))
+		// throw new TypeException("incorrect type " + mitype +
+		// " for assignment to " + id + ':' + mvtype);
+		// }
+		//
+		// argu.set(id, mvtype);
+		// break;
 		return null;
 	}
 
@@ -325,7 +322,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 
 		final SizzleType type = n.f5.accept(this, argu);
 
-		final AggregatorSpec annotation = argu.getTable(n.f1.f0.tokenImage, type).getAggregator(0).getAnnotation(AggregatorSpec.class);
+		final AggregatorSpec annotation = argu.getAggregators(n.f1.f0.tokenImage, type).get(0).getAnnotation(AggregatorSpec.class);
 
 		SizzleScalar tweight = null;
 		if (n.f6.present()) {
@@ -416,7 +413,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 	/** {@inheritDoc} */
 	@Override
 	public SizzleType visit(final EmitStatement n, final SymbolTable argu) {
-		final String id = new ArrayList<String>(this.nameFinder.visit(n.f1)).get(0);
+		final String id = n.f1.f0.tokenImage;
 
 		final SizzleTable t = (SizzleTable) argu.get(id);
 
@@ -458,13 +455,53 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 	/** {@inheritDoc} */
 	@Override
 	public SizzleType visit(final ExprStatement n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		final SizzleType type = n.f0.accept(this, argu);
+
+		if (n.f1.present() && !(type instanceof SizzleInt))
+			throw new TypeException(type + " not valid for operator " + n.f1.toString());
+
+		return type;
 	}
 
 	/** {@inheritDoc} */
 	@Override
 	public SizzleType visit(final ForStatement n, final SymbolTable argu) {
-		throw new RuntimeException("unimplemented");
+		SymbolTable st;
+
+		try {
+			st = argu.cloneNonLocals();
+		} catch (final IOException e) {
+			throw new RuntimeException(e.getClass().getSimpleName() + " caught", e);
+		}
+
+		if (n.f2.present())
+			((NodeChoice) n.f2.node).choice.accept(this, st);
+
+		if (n.f4.present())
+			n.f4.accept(this, st);
+
+		if (n.f6.present())
+			((NodeChoice) n.f6.node).choice.accept(this, st);
+
+		n.f8.accept(this, st);
+
+		return null;
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public SizzleType visit(final ForVarDecl n, final SymbolTable argu) {
+		final VarDecl varDecl = new VarDecl(n.f0, n.f1, n.f2, n.f3, new NodeToken(";"));
+
+		return varDecl.accept(this, argu);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public SizzleType visit(final ForExprStatement n, final SymbolTable argu) {
+		final ExprStatement exprStatement = new ExprStatement(n.f0, n.f1, new NodeToken(";"));
+
+		return exprStatement.accept(this, argu);
 	}
 
 	/** {@inheritDoc} */
@@ -514,8 +551,13 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 		for (final Node node : n.f2.nodes) {
 			final SizzleType type = ((NodeSequence) node).nodes.get(3).accept(this, argu);
 
-			for (final String id : this.nameFinder.visit((IdentifierList) ((NodeSequence) node).nodes.get(0)))
-				st.set(id, type);
+			final IdentifierList identifierList = (IdentifierList) ((NodeSequence) node).nodes.get(0);
+
+			st.set(identifierList.f0.f0.tokenImage, type);
+
+			if (identifierList.f1.present())
+				for (final Node nod : identifierList.f1.nodes)
+					st.set(((Identifier) ((NodeSequence) nod).elementAt(1)).f0.tokenImage, type);
 		}
 
 		n.f3.accept(this, st);
@@ -646,7 +688,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 					// final SizzleType selector = ((Selector)
 					// nodeChoice.choice).accept(this, argu);
 
-					return ((SizzleTuple) soperand).getMember(new ArrayList<String>(this.nameFinder.visit(((Selector) nodeChoice.choice))).get(0));
+					return ((SizzleTuple) soperand).getMember(((Selector) nodeChoice.choice).f1.f0.tokenImage);
 				case 1: // index
 					final SizzleType ioperand = n.f0.accept(this, argu);
 
@@ -670,10 +712,11 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 
 					final SizzleFunction f = new FunctionFindingVisitor(formalParameters).visit(n.f0, argu);
 
-					if (f.countParameters() != formalParameters.size())
-						for (int i = 0; i < formalParameters.size(); i++)
-							if (!f.getParameter(i).assigns(formalParameters.get(i)))
-								throw new TypeException("invalid args " + formalParameters + " for call to " + f);
+					// if (f.countParameters() != formalParameters.size())
+					// for (int i = 0; i < formalParameters.size(); i++)
+					// if (!f.getParameter(i).assigns(formalParameters.get(i)))
+					// throw new TypeException("invalid args " +
+					// formalParameters + " for call to " + f);
 
 					return f;
 				default:
@@ -864,7 +907,7 @@ public class TypeCheckingVisitor extends GJDepthFirst<SizzleType, SymbolTable> {
 		return new SizzleTime();
 	}
 
-	private List<SizzleType> check(final Call c, final SymbolTable argu) {
+	List<SizzleType> check(final Call c, final SymbolTable argu) {
 		if (c.f1.present())
 			return this.check((ExprList) c.f1.node, argu);
 
