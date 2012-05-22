@@ -51,7 +51,7 @@ public class TestCodeGeneratingVisitor {
 
 		TestCodeGeneratingVisitor.compiler = new CharSequenceCompiler<SizzleRunner>(null, null);
 
-		final StringTemplateGroupLoader loader = new PathGroupLoader("/home/anthonyu/Projects/Sizzle/src/antlr/", ErrorManager.getStringTemplateErrorListener());
+		final StringTemplateGroupLoader loader = new PathGroupLoader("src/antlr/", ErrorManager.getStringTemplateErrorListener());
 		StringTemplateGroup.registerGroupLoader(loader);
 
 		TestCodeGeneratingVisitor.stg = StringTemplateGroup.loadGroup("SizzleJavaHadoop");
