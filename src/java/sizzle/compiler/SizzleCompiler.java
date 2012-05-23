@@ -165,17 +165,17 @@ public class SizzleCompiler {
 			final BufferedReader r = new BufferedReader(new FileReader(in));
 			try {
 				new SizzleParser(r);
+
+				final Start start = SizzleParser.Start();
+
+				typeChecker.visit(start, st);
+
+				final String src = codeGenerator.visit(start, st);
+
+				o.write(src.getBytes());
 			} finally {
 				r.close();
 			}
-
-			final Start start = SizzleParser.Start();
-
-			typeChecker.visit(start, st);
-
-			final String src = codeGenerator.visit(start, st);
-
-			o.write(src.getBytes());
 		} finally {
 			o.close();
 		}

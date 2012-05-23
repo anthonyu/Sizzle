@@ -83,7 +83,7 @@ public class SymbolTable {
 		this.protomap.put(double.class, new SizzleFloat());
 		this.protomap.put(boolean.class, new SizzleBool());
 		this.protomap.put(byte[].class, new SizzleBytes());
-		this.protomap.put(String.class, new SizzleString());
+		this.protomap.put(Object.class, new SizzleString());
 
 		// this maps scalar Sizzle scalar types names to their classes
 		// TODO: do this via reflection
@@ -480,7 +480,7 @@ public class SymbolTable {
 
 			int i = 0;
 			for (final Field field : c.getDeclaredFields()) {
-				if (!field.getName().endsWith("_"))
+				if (!field.getName().endsWith("_") || field.getName().startsWith("bitField"))
 					continue;
 
 				final String member = SymbolTable.deCamelCase(field.getName().substring(0, field.getName().length() - 1));
