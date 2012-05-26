@@ -119,6 +119,7 @@ public class SizzleCompiler {
 
 			return;
 		}
+		
 		final String filename = in.getName();
 
 		final String name = filename.substring(0, filename.lastIndexOf('.'));
@@ -149,11 +150,19 @@ public class SizzleCompiler {
 		try {
 			final TypeCheckingVisitor typeChecker = new TypeCheckingVisitor();
 
-			final URL url = CodeGeneratingVisitor.class.getClassLoader().getResource("SizzleJavaHadoop.stg");
-			final BufferedReader s = new BufferedReader(new InputStreamReader(url.openStream()));
+			final StringTemplateGroup superStg;
+			final BufferedReader t = new BufferedReader(new InputStreamReader(CodeGeneratingVisitor.class.getClassLoader().getResource("SizzleJava.stg").openStream()));
+			try {
+				superStg = new StringTemplateGroup(t);
+			} finally {
+				t.close();
+			}
+			
 			final StringTemplateGroup stg;
+			final BufferedReader s = new BufferedReader(new InputStreamReader(CodeGeneratingVisitor.class.getClassLoader().getResource("SizzleJavaHadoop.stg").openStream()));
 			try {
 				stg = new StringTemplateGroup(s);
+				stg.setSuperGroup(superStg);
 			} finally {
 				s.close();
 			}
@@ -163,19 +172,20 @@ public class SizzleCompiler {
 			final SymbolTable st = new SymbolTable(libs);
 
 			final BufferedReader r = new BufferedReader(new FileReader(in));
+			
 			try {
 				new SizzleParser(r);
+
+				final Start start = SizzleParser.Start();
+
+				typeChecker.visit(start, st);
+
+				final String src = codeGenerator.visit(start, st);
+
+				o.write(src.getBytes());
 			} finally {
 				r.close();
 			}
-
-			final Start start = SizzleParser.Start();
-
-			typeChecker.visit(start, st);
-
-			final String src = codeGenerator.visit(start, st);
-
-			o.write(src.getBytes());
 		} finally {
 			o.close();
 		}
@@ -183,7 +193,7 @@ public class SizzleCompiler {
 		final String runtime = root + "/dist/sizzle-runtime.jar";
 		final StringBuilder classPath = new StringBuilder(runtime);
 		for (final File f : new File(hadoopBase).listFiles())
-			if (Pattern.compile("hadoop-[a-z]+-\\d+\\.\\d+\\.\\d+\\.jar").matcher(f.getName()).matches())
+			if (Pattern.compile("hadoop-[a-z]+-[\\d+\\.]+\\.jar").matcher(f.getName()).matches())
 				classPath.append(":" + f);
 		for (final File f : new File(hadoopBase + File.separatorChar + "lib").listFiles())
 			if (f.toString().endsWith(".jar"))
