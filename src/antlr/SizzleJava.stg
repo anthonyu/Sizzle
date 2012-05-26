@@ -33,7 +33,7 @@ else
 <endif>
 >>
 WhenStatement(vars, expression, statement) ::= <<
-<vars:{for (int <it> = 0; <it> < 0; <it>++}>
+<vars:{for (int <it> = 0; <it> \< 0; <it>++}>
 	if (<expression>) <statement>
 >>
 Expression(lhs, operators, operands) ::= "<lhs><operators,operands:{operator,operand|<operator><operand>}>"
