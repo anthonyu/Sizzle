@@ -152,6 +152,10 @@ pull request when you are ready.
 
 Your contributions will be greatly appreciated!
 
+Status
+------
+
+[![Build Status](https://travis-ci.org/anthonyu/Sizzle.png)](https://travis-ci.org/anthonyu/Sizzle)
 
 Happy sizzling!
 
