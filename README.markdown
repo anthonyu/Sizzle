@@ -1,5 +1,5 @@
-Welcome to the Sizzle FAQ
-=========================
+Sizzle [![Build Status](https://travis-ci.org/anthonyu/Sizzle.png)](https://travis-ci.org/anthonyu/Sizzle)
+======
 
 What is Sizzle?
 ---------------
@@ -152,10 +152,9 @@ pull request when you are ready.
 
 Your contributions will be greatly appreciated!
 
-Status
-------
+License
+-------
 
-[![Build Status](https://travis-ci.org/anthonyu/Sizzle.png)](https://travis-ci.org/anthonyu/Sizzle)
+Copyright 2013 Anthony D. Urso (anthonyu)
 
-Happy sizzling!
-
+Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
