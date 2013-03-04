@@ -6,7 +6,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Cluster;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -37,7 +36,7 @@ public abstract class SizzleRunner {
 
 		configuration.setBoolean("sizzle.runtime.robust", robust);
 
-		final Job job = Job.getInstance(new Cluster(configuration), configuration);
+		final Job job = new Job(configuration);
 
 		for (final Path in : ins)
 			FileInputFormat.addInputPath(job, in);

@@ -174,10 +174,6 @@ public class TestTopAggregator {
 		reduceDriver10.addOutput(new Text("test[] = five, 5, 0"), NullWritable.get());
 		reduceDriver10.runTest();
 
-		reduceDriver10.setInput(new EmitKey("[test]", "test"), new ArrayList<EmitValue>());
-		reduceDriver10.resetOutput();
-		reduceDriver10.runTest();
-
 		final ReduceDriver<EmitKey, EmitValue, Text, NullWritable> reduceDriver1 = new ReduceDriver<EmitKey, EmitValue, Text, NullWritable>(
 				new TopSizzleReducerOne());
 		reduceDriver1.setInput(new EmitKey("test"), values);
