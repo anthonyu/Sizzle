@@ -6,7 +6,7 @@ What is Sizzle?
 
 Sizzle is an open source implementation of the Sawzall programming language designed for
 interoperation with the Hadoop MapReduce and DFS stack.  It is implemented in pure Java, is easily
-extendible, and the programs produced by it will run anywhere that has a recent Hadoop installed,
+extensible, and the programs produced by it will run anywhere that has a recent Hadoop installed,
 even if Sizzle is not also installed.
 
 Why Sizzle?
